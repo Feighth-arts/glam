@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+    --color-rose-light: #FFE4E6;
+    --color-rose-primary: #F43F5E;
+    --color-rose-dark: #E11D48;
+    --color-gold-light: #FCD34D;
+    --color-gold-dark: #FBBF24;
+    --color-white: #FFFFFF;
+    --color-light-gray: #F7F7F7;
+    --color-dark-blue: #0A1014;
+
+      /* Assign font variables from layout.jsx */
+  --font-roboto: var(--font-roboto);
+  --font-great-vibes: var(--font-great-vibes);
+  --font-sakitu: var(--font-sakitu);
+
+}
+
+
+@layer base {
+  :root {
+    --color-rose-light: #FFE4E6;
+    --color-rose-primary: #F43F5E;
+    --color-rose-dark: #E11D48;
+    --color-gold-light: #FCD34D;
+    --color-gold-dark: #FBBF24;
+    --color-white: #FFFFFF;
+    --color-light-gray: #F7F7F7;
+    --color-dark-blue: #0A1014;
+  }
+
+  /* Active tab styling */
+  .nav-link.active {
+    border-bottom: 2px solid var(--color-rose-primary);
+  }
+
+  .nav-link:hover {
+    border-bottom: 2px solid var(--color-rose-primary);
+    transition: border-bottom 0.2s ease-in-out;
+  }
+}
+
+body {
+  @apply bg-gray-100 antialiased;
+  font-family: var(--font-roboto);
+}
+
+@utilities {
+  .font-roboto {
+    font-family: var(--font-roboto);
+  }
+
+  .font-great-vibes {
+    font-family: var(--font-great-vibes);
+  }
+
+  .font-sakitu {
+    font-family: var(--font-sakitu);
+  }
+}
