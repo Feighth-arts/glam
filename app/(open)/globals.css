@@ -10,13 +10,11 @@
     --color-light-gray: #F7F7F7;
     --color-dark-blue: #0A1014;
 
-      /* Assign font variables from layout.jsx */
-  --font-roboto: var(--font-roboto);
-  --font-great-vibes: var(--font-great-vibes);
-  --font-sakitu: var(--font-sakitu);
-
+    /* Assign font variables from layout.jsx */
+    --font-roboto: var(--font-roboto);
+    --font-great-vibes: var(--font-great-vibes);
+    --font-sakitu: var(--font-sakitu);
 }
-
 
 @layer base {
   :root {
@@ -39,14 +37,30 @@
     border-bottom: 2px solid var(--color-rose-primary);
     transition: border-bottom 0.2s ease-in-out;
   }
+
+  /* Prevent horizontal scroll */
+  html, body {
+    overflow-x: hidden;
+  }
+
+  /* Smooth scrolling */
+  * {
+    scroll-behavior: smooth;
+  }
+
+  /* Ensure no horizontal scrolling on collapsed sidebar */
+  nav {
+    min-width: 0;
+  }
 }
 
 body {
   @apply bg-gray-100 antialiased;
   font-family: var(--font-roboto);
+  overflow-x: hidden;
 }
 
-@utilities {
+@layer utilities {
   .font-roboto {
     font-family: var(--font-roboto);
   }
@@ -57,5 +71,24 @@ body {
 
   .font-sakitu {
     font-family: var(--font-sakitu);
+  }
+
+  /* Custom scrollbar for webkit browsers */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
   }
 }
