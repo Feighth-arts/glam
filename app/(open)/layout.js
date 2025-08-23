@@ -40,7 +40,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${greatVibes.variable} ${roboto.variable}  ${sakitu.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${greatVibes.variable} ${roboto.variable}  ${sakitu.variable} antialiased overflow-y-auto`}
       >
         <Navbar />
         {children}
