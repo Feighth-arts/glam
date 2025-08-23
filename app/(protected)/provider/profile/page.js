@@ -538,7 +538,8 @@ export default function ProviderProfile({ profile: initialProfile = {} }) {
                       >
                         {profile.avatar ? (
                           <img 
-                            src={profile.avatar} 
+                            src={'/user.png'} 
+                            // src={profile.avatar} 
                             alt="Profile" 
                             className="w-full h-full object-cover rounded-full"
                           />
