@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { RiDashboard2Fill, RiMenuFoldLine, RiMenuUnfoldLine } from "react-icons/ri";
 import { FaBookBookmark } from "react-icons/fa6";
 import { CgProfile } from "react-icons/cg";
@@ -27,64 +29,70 @@ const Sidebar = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
+  const pathname = usePathname();
+
   const menuItems = [
-    { icon: RiDashboard2Fill, label: "Dashboard", active: true },
-    { icon: FaBookBookmark, label: "Bookings" },
-    { icon: IoMdNotifications, label: "Notifications" },
-    { icon: TbReportAnalytics, label: "Reports" },
-    { icon: CgProfile, label: "Profile" },
+    { icon: RiDashboard2Fill, label: "Dashboard", href: "/provider/dashboard" },
+    { icon: FaBookBookmark, label: "Bookings", href: "/provider/bookings" },
+    { icon: IoMdNotifications, label: "Notifications", href: "/provider/notifications" },
+    { icon: TbReportAnalytics, label: "Reports", href: "/provider/reports" },
+    { icon: CgProfile, label: "Profile", href: "/provider/profile" },
   ];
 
   return (
     <>
       {/* Mobile Top Bar */}
       {isMobile && (
-        <div className="lg:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between fixed top-0 left-0 right-0 z-40 h-14">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsMobileOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              <IoMdMenu className="w-5 h-5 text-gray-600" />
-            </button>
-            <h1 className="font-semibold text-gray-900">Dashboard</h1>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="rounded-full w-8 h-8">
-              <Image
-                src="/user.png"
-                alt="Profile Picture"
-                width={32}
-                height={32}
-                className="w-full h-full object-cover rounded-full"
-              />
+        <>
+          <div className="lg:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between fixed top-0 left-0 right-0 z-40 h-14">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsMobileOpen(true)}
+                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <IoMdMenu className="w-5 h-5 text-gray-600" />
+              </button>
+              <h1 className="font-semibold text-gray-900">Dashboard</h1>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="rounded-full w-8 h-8">
+                <Image
+                  src="/user.png"
+                  alt="Profile Picture"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Mobile Overlay */}
-      {isMobile && isMobileOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-45"
-          onClick={() => setIsMobileOpen(false)}
-        />
+          {/* Mobile Overlay */}
+          {isMobileOpen && (
+            <div 
+              className="fixed inset-0 bg-black/60 z-45"
+              onClick={() => setIsMobileOpen(false)}
+            />
+          )}
+        </>
       )}
 
       {/* Sidebar */}
-      <nav className={`
-        bg-rose-primary text-white flex flex-col
-        ${isMobile ? (
-          `fixed top-14 left-0 bottom-0 z-50 transition-transform duration-300 ease-in-out w-64 ${
-            isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-          }`
-        ) : (
-          `h-screen sticky top-0 left-0 transition-all duration-300 ease-in-out ${
-            isCollapsed ? 'w-16' : 'w-64'
-          }`
-        )}
-      `}>
+      <nav 
+        className={`
+          bg-rose-primary text-white flex flex-col
+          ${isMobile ? 
+            `fixed top-0 left-0 h-full z-50 transition-transform duration-300 ease-in-out w-64 ${
+              isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+            }`
+            : 
+            `h-screen transition-all duration-300 ease-in-out ${
+              isCollapsed ? 'w-16' : 'w-64'
+            }`
+          }
+        `}
+      >
         {/* Sidebar Header */}
         <div className="p-4 border-b border-rose-600/30 flex-shrink-0">
           {isCollapsed && !isMobile ? (
@@ -152,18 +160,19 @@ const Sidebar = () => {
           <ul className="space-y-1 px-3">
             {menuItems.map((item, index) => {
               const Icon = item.icon;
+              const isActive = pathname === item.href;
               return (
                 <li key={index}>
-                  <button 
+                  <Link
+                    href={item.href}
                     className={`
                       w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative
-                      ${item.active 
+                      ${isActive 
                         ? 'bg-white/20 text-white shadow-sm backdrop-blur-sm border border-white/30' 
                         : 'hover:bg-white/10 text-rose-100 hover:text-white'
                       }
                       ${isCollapsed && !isMobile ? 'justify-center' : ''}
                     `}
-                    title={isCollapsed && !isMobile ? item.label : ''}
                   >
                     <Icon className={`flex-shrink-0 ${isCollapsed && !isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
                     {(!isCollapsed || isMobile) && (
@@ -172,11 +181,11 @@ const Sidebar = () => {
                     
                     {/* Tooltip for collapsed state */}
                     {isCollapsed && !isMobile && (
-                      <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
+                      <span className="fixed left-16 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none shadow-lg">
                         {item.label}
-                      </div>
+                      </span>
                     )}
-                  </button>
+                  </Link>
                 </li>
               );
             })}
@@ -200,9 +209,9 @@ const Sidebar = () => {
               )}
               
               {isCollapsed && !isMobile && (
-                <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
+                <span className="fixed left-16 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none shadow-lg">
                   Help & Feedback
-                </div>
+                </span>
               )}
             </button>
 
@@ -220,9 +229,9 @@ const Sidebar = () => {
               )}
               
               {isCollapsed && !isMobile && (
-                <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
+                <span className="fixed left-16 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none shadow-lg">
                   Log Out
-                </div>
+                </span>
               )}
             </button>
           </div>

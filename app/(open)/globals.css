@@ -38,9 +38,10 @@
     transition: border-bottom 0.2s ease-in-out;
   }
 
-  /* Prevent horizontal scroll */
+  /* Prevent horizontal scroll and set up layout */
   html, body {
-    overflow-x: hidden;
+    overflow: hidden;
+    height: 100%;
   }
 
   /* Smooth scrolling */
@@ -51,6 +52,13 @@
   /* Ensure no horizontal scrolling on collapsed sidebar */
   nav {
     min-width: 0;
+  }
+  
+  /* Custom scrolling container */
+  .scroll-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
   }
 }
 

@@ -40,23 +40,27 @@ export default function ProviderLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${greatVibes.variable} ${roboto.variable} ${sakitu.variable} antialiased bg-light-gray`}
+        className={`${geistSans.variable} ${geistMono.variable} ${greatVibes.variable} ${roboto.variable} ${sakitu.variable} antialiased bg-light-gray h-screen overflow-hidden`}
       >
         {/* Desktop Layout */}
-        <div className="hidden lg:flex min-h-screen">
-          <section className="h-[100vh] sticky top-0 left-0">
+        <div className="hidden lg:flex h-screen">
+          <section className="sticky top-0 h-screen flex">
             <Sidebar />
           </section>
-          {/* <main className="flex-1 px-4 py-2 overflow-auto">
-            {children}
-          </main> */}
+          <main className="flex-1 flex flex-col min-h-screen">
+            <div className="flex-1 px-4 py-2 overflow-y-auto">
+              {children}
+            </div>
+          </main>
         </div>
 
         {/* Mobile Layout */}
-        <div className="lg:hidden min-h-screen">
+        <div className="lg:hidden flex flex-col h-screen">
           <Sidebar />
-          <main className="pt-14 px-4 py-2">
-            {children}
+          <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] mt-14">
+            <div className="flex-1 px-4 py-2 overflow-y-auto">
+              {children}
+            </div>
           </main>
         </div>
       </body>
