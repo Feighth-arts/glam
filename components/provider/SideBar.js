@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RiDashboard2Fill, RiMenuFoldLine, RiMenuUnfoldLine } from "react-icons/ri";
-import { FaBookBookmark } from "react-icons/fa6";
+import { FaBookBookmark, FaMoneyBill1Wave } from "react-icons/fa6";
+import { GrServices } from "react-icons/gr";
 import { CgProfile } from "react-icons/cg";
 import { IoMdNotifications, IoMdClose, IoMdMenu } from "react-icons/io";
 import { TbReportAnalytics } from "react-icons/tb";
@@ -34,6 +35,8 @@ const Sidebar = () => {
   const menuItems = [
     { icon: RiDashboard2Fill, label: "Dashboard", href: "/provider/dashboard" },
     { icon: FaBookBookmark, label: "Bookings", href: "/provider/bookings" },
+    { icon: FaMoneyBill1Wave, label: "Earnings", href: "/provider/earnings" },
+    { icon: GrServices, label: "Services", href: "/provider/services" },
     { icon: IoMdNotifications, label: "Notifications", href: "/provider/notifications" },
     { icon: TbReportAnalytics, label: "Reports", href: "/provider/reports" },
     { icon: CgProfile, label: "Profile", href: "/provider/profile" },
