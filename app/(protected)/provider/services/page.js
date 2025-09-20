@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { IoMdAdd } from 'react-icons/io';
 import { FaStar } from 'react-icons/fa';
-import { MdModeEdit, MdDelete, MdSave, MdClose } from 'react-icons/md';
+import { MdModeEdit, MdDelete, MdSave, MdClose, MdSchedule } from 'react-icons/md';
+import { Clock, Calendar } from 'lucide-react';
 
 // Mock data for initial testing
 const mockServices = [
@@ -12,16 +13,26 @@ const mockServices = [
     name: "Hair Styling",
     price: 2500,
     points: 25,
+    duration: 90,
     ratings: 4.5,
-    totalRatings: 128
+    totalRatings: 128,
+    availability: {
+      days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      timeSlots: ['09:00', '11:00', '14:00', '16:00']
+    }
   },
   {
     id: 2,
     name: "Makeup",
     price: 3000,
     points: 30,
+    duration: 60,
     ratings: 4.8,
-    totalRatings: 95
+    totalRatings: 95,
+    availability: {
+      days: ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      timeSlots: ['10:00', '13:00', '15:00', '17:00']
+    }
   }
 ];
 
@@ -33,22 +44,48 @@ export default function ServicesPage() {
     name: '',
     price: '',
     points: '',
+    duration: '',
+    availability: {
+      days: [],
+      timeSlots: []
+    }
   });
+
+  const [showAvailability, setShowAvailability] = useState(null);
+  const [tempTimeSlot, setTempTimeSlot] = useState('');
+
+  const daysOfWeek = [
+    { key: 'monday', label: 'Mon' },
+    { key: 'tuesday', label: 'Tue' },
+    { key: 'wednesday', label: 'Wed' },
+    { key: 'thursday', label: 'Thu' },
+    { key: 'friday', label: 'Fri' },
+    { key: 'saturday', label: 'Sat' },
+    { key: 'sunday', label: 'Sun' }
+  ];
 
   const handleAddNew = () => {
     setIsAddingNew(true);
-    setNewService({ name: '', price: '', points: '' });
+    setNewService({ 
+      name: '', 
+      price: '', 
+      points: '', 
+      duration: '',
+      availability: { days: [], timeSlots: [] }
+    });
   };
 
   const handleSaveNew = () => {
-    if (!newService.name || !newService.price || !newService.points) {
-      // You can add proper validation feedback here
+    if (!newService.name || !newService.price || !newService.points || !newService.duration) {
       return;
     }
 
     setServices(prev => [...prev, {
       id: Date.now(),
       ...newService,
+      price: Number(newService.price),
+      points: Number(newService.points),
+      duration: Number(newService.duration),
       ratings: 0,
       totalRatings: 0
     }]);
@@ -60,17 +97,60 @@ export default function ServicesPage() {
     setNewService({
       name: service.name,
       price: service.price,
-      points: service.points
+      points: service.points,
+      duration: service.duration,
+      availability: service.availability
     });
   };
 
   const handleSaveEdit = (id) => {
     setServices(prev => prev.map(service => 
       service.id === id 
-        ? { ...service, ...newService }
+        ? { 
+            ...service, 
+            ...newService,
+            price: Number(newService.price),
+            points: Number(newService.points),
+            duration: Number(newService.duration)
+          }
         : service
     ));
     setEditingId(null);
+  };
+
+  const toggleDay = (day) => {
+    setNewService(prev => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        days: prev.availability.days.includes(day)
+          ? prev.availability.days.filter(d => d !== day)
+          : [...prev.availability.days, day]
+      }
+    }));
+  };
+
+  const addTimeSlot = () => {
+    if (tempTimeSlot && !newService.availability.timeSlots.includes(tempTimeSlot)) {
+      setNewService(prev => ({
+        ...prev,
+        availability: {
+          ...prev.availability,
+          timeSlots: [...prev.availability.timeSlots, tempTimeSlot]
+        }
+      }));
+      setTempTimeSlot('');
+    }
+  };
+
+  const removeTimeSlot = (timeSlot) => {
+    setNewService(prev => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        timeSlots: prev.availability.timeSlots.filter(t => t !== timeSlot)
+      }
+    }));
   };
 
   const handleDelete = (id) => {
@@ -97,23 +177,29 @@ export default function ServicesPage() {
               <h3 className="text-lg font-semibold text-gray-900">{service.name}</h3>
             )}
 
-            {/* Rating display - read only */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <FaStar
-                    key={star}
-                    className={`w-4 h-4 ${
-                      star <= service.ratings
-                        ? 'text-gold-dark'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
+            {/* Rating and Duration */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <FaStar
+                      key={star}
+                      className={`w-4 h-4 ${
+                        star <= service.ratings
+                          ? 'text-gold-dark'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm text-gray-600">
+                  ({service.totalRatings})
+                </span>
               </div>
-              <span className="text-sm text-gray-600">
-                ({service.totalRatings} ratings)
-              </span>
+              <div className="flex items-center gap-1 text-gray-600">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">{service.duration} min</span>
+              </div>
             </div>
           </div>
 
@@ -152,14 +238,14 @@ export default function ServicesPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700">Price (KES)</label>
             {isEditing ? (
               <input
                 type="number"
                 value={newService.price}
-                onChange={(e) => setNewService(prev => ({ ...prev, price: Number(e.target.value) }))}
+                onChange={(e) => setNewService(prev => ({ ...prev, price: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
                 placeholder="Price"
               />
@@ -171,21 +257,92 @@ export default function ServicesPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Reward Points</label>
+            <label className="text-sm font-medium text-gray-700">Points</label>
             {isEditing ? (
               <input
                 type="number"
                 value={newService.points}
-                onChange={(e) => setNewService(prev => ({ ...prev, points: Number(e.target.value) }))}
+                onChange={(e) => setNewService(prev => ({ ...prev, points: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
                 placeholder="Points"
               />
             ) : (
               <p className="text-lg font-semibold text-gold-dark">
-                {service.points} points
+                {service.points} pts
               </p>
             )}
           </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Duration</label>
+            {isEditing ? (
+              <input
+                type="number"
+                value={newService.duration}
+                onChange={(e) => setNewService(prev => ({ ...prev, duration: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
+                placeholder="Minutes"
+              />
+            ) : (
+              <p className="text-lg font-semibold text-blue-600">
+                {service.duration} min
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Availability Section */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700">Availability</label>
+            <button
+              onClick={() => setShowAvailability(showAvailability === service.id ? null : service.id)}
+              className="text-rose-primary hover:text-rose-dark text-sm flex items-center gap-1"
+            >
+              <MdSchedule className="w-4 h-4" />
+              {showAvailability === service.id ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          
+          {!isEditing && (
+            <div className="mt-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 mb-1">
+                <Calendar className="w-4 h-4" />
+                <span>{service.availability.days.length} days available</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{service.availability.timeSlots.length} time slots</span>
+              </div>
+            </div>
+          )}
+
+          {showAvailability === service.id && (
+            <div className="mt-3 p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-2 block">Available Days</label>
+                  <div className="flex flex-wrap gap-1">
+                    {service.availability.days.map(day => (
+                      <span key={day} className="px-2 py-1 bg-rose-100 text-rose-700 text-xs rounded">
+                        {daysOfWeek.find(d => d.key === day)?.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-2 block">Time Slots</label>
+                  <div className="flex flex-wrap gap-1">
+                    {service.availability.timeSlots.map(time => (
+                      <span key={time} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                        {time}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -216,21 +373,87 @@ export default function ServicesPage() {
                 placeholder="Service name"
               />
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <input
                   type="number"
                   value={newService.price}
-                  onChange={(e) => setNewService(prev => ({ ...prev, price: Number(e.target.value) }))}
+                  onChange={(e) => setNewService(prev => ({ ...prev, price: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
                   placeholder="Price (KES)"
                 />
                 <input
                   type="number"
                   value={newService.points}
-                  onChange={(e) => setNewService(prev => ({ ...prev, points: Number(e.target.value) }))}
+                  onChange={(e) => setNewService(prev => ({ ...prev, points: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
-                  placeholder="Reward points"
+                  placeholder="Points"
                 />
+                <input
+                  type="number"
+                  value={newService.duration}
+                  onChange={(e) => setNewService(prev => ({ ...prev, duration: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
+                  placeholder="Duration (min)"
+                />
+              </div>
+
+              {/* Availability Settings */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Available Days</label>
+                  <div className="grid grid-cols-7 gap-2">
+                    {daysOfWeek.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleDay(key)}
+                        className={`py-2 px-2 text-sm font-medium rounded-lg transition-all ${
+                          newService.availability.days.includes(key)
+                            ? 'bg-rose-primary text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Time Slots</label>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="time"
+                      value={tempTimeSlot}
+                      onChange={(e) => setTempTimeSlot(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={addTimeSlot}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {newService.availability.timeSlots.map(time => (
+                      <span
+                        key={time}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full flex items-center gap-2"
+                      >
+                        {time}
+                        <button
+                          type="button"
+                          onClick={() => removeTimeSlot(time)}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2">

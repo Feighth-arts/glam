@@ -1,11 +1,141 @@
+"use client";
+
+import { Calendar, DollarSign, Users, Star, TrendingUp, Clock, CheckCircle } from "lucide-react";
+
 const ProviderDashboard = () => {
-    return ( 
-        <main>
-            This is the provider dashboard
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi magni ab dignissimos ipsam atque modi qui non reprehenderit ullam animi ducimus dicta, soluta, voluptatem dolorem? Officiis nobis nemo repellat, enim perferendis corrupti ipsa quaerat exercitationem consequatur ullam error veritatis ducimus beatae sed optio dignissimos. Quia saepe voluptatem placeat quae alias voluptatibus qui molestiae at modi. Quam, est architecto dolor reprehenderit voluptatibus praesentium consectetur a, rerum, iste vitae quibusdam dolorem magni laboriosam temporibus nulla quae rem. Mollitia, dolores quo, cumque totam, a explicabo laboriosam consectetur veniam cum recusandae vero facilis. Impedit temporibus magnam, dignissimos illo ea modi sunt ut sequi accusantium sit, accusamus recusandae odit earum porro consectetur sapiente placeat praesentium officia suscipit architecto doloremque voluptates atque? Eos ipsa alias recusandae dolorum sint dicta, dolorem fugit vero eius beatae reprehenderit illo assumenda adipisci aliquid delectus doloribus ea fuga soluta, reiciendis quae, consectetur explicabo est natus? Tempora consequuntur perferendis ea iusto fugiat officia, doloribus, commodi illum, quam et odio veritatis ipsa officiis molestias dolore nisi. Doloribus tenetur, repudiandae nesciunt, sapiente fugit possimus modi id consectetur ducimus aliquam magni a, tempore qui expedita. Nesciunt tempore eum culpa magnam molestiae suscipit nemo, aperiam error fugiat ea recusandae obcaecati impedit, nulla dolores saepe quod, eaque id quae hic omnis aut. Quam laudantium praesentium suscipit, eligendi, ut reiciendis vero rem aut saepe animi exercitationem adipisci nulla aliquam, officia pariatur incidunt. Voluptatum fugiat magnam voluptatibus vel omnis saepe vitae consequuntur vero in mollitia. Cupiditate animi dolorum commodi obcaecati harum dignissimos sed in maxime laudantium facere, nihil velit ratione illo numquam saepe odio accusamus. Accusantium consectetur voluptatibus ea deleniti, commodi dolore quidem distinctio provident dicta cupiditate sint sequi labore error nemo sapiente excepturi ipsum? Consectetur dignissimos est officiis eligendi repellendus incidunt magni, dolor non commodi ut blanditiis sapiente sequi velit numquam accusantium reprehenderit delectus iusto praesentium dolores? Consequatur vero, excepturi laudantium eveniet laborum placeat sapiente aliquid sint fugiat. Dolor reiciendis, delectus nam inventore magni necessitatibus deleniti aut, numquam, sint labore dicta facilis sunt illo veritatis obcaecati debitis ratione excepturi eligendi? Iusto, est sed. Autem cumque temporibus earum alias quod facere error amet voluptatem, esse doloribus non dicta eligendi tempora possimus totam officia dolor quo neque? Aperiam a rerum totam, natus quaerat aliquam sed similique laboriosam iste dignissimos doloremque nulla corporis, ut veniam dolorem corrupti, facilis voluptatem laborum recusandae reiciendis nobis! Fugit quia nostrum aspernatur eaque iusto quo minima doloremque delectus dolor eveniet similique iste, ipsa reprehenderit quis sapiente unde asperiores accusamus, blanditiis hic totam modi dignissimos architecto fuga. Officia incidunt praesentium iusto mollitia, repellat voluptatum! Ex ea fuga accusantium distinctio amet maxime. Doloremque beatae iure pariatur, ea magnam maiores quasi. Autem, aperiam cumque? Perspiciatis, sed nulla in asperiores illum delectus molestias reiciendis, et minima quo autem aliquid praesentium ad dolorem ducimus non amet est beatae esse. Doloribus rem quasi quis perferendis beatae reprehenderit aspernatur provident ipsa sed fugiat deserunt velit enim libero, soluta nam aut quisquam ullam delectus! Quam excepturi non quo repellendus quod corrupti harum commodi. Tempore neque recusandae quis assumenda harum ex autem! Nemo dolore expedita et itaque rem doloribus labore nam sed culpa beatae ea, minus saepe illo neque veniam odit. Facilis animi repudiandae voluptatum illo ex totam quisquam fugiat, quibusdam atque non cupiditate obcaecati omnis deserunt nam, aut quasi excepturi eligendi fuga laboriosam libero? Enim quisquam aut architecto temporibus ipsum modi, harum, et voluptatum eveniet repellendus facilis, ea quam ex consequuntur obcaecati quidem nisi. Id qui expedita aperiam exercitationem sequi laboriosam, iusto ducimus accusantium quas! Est quas harum fugit dolore ad excepturi? Corporis quo repellendus harum sapiente libero, suscipit sunt nesciunt laborum impedit placeat possimus quae voluptatum odit molestias accusantium asperiores nostrum incidunt alias quam corrupti omnis veniam quis atque aut. Nesciunt, iste mollitia nulla repellendus ab illum aperiam praesentium! Aut impedit excepturi laborum accusamus consectetur enim voluptas, provident atque beatae repudiandae nobis dicta explicabo vel quis. Nobis facilis quasi eaque maiores adipisci a cumque velit consequatur vitae! Tempore, facilis ducimus sequi debitis ut impedit eos id nihil minima? Dolor natus iusto earum numquam sint adipisci deserunt, error rem quo autem inventore aspernatur maiores ipsum totam quisquam explicabo repellendus. Minima quo dicta eligendi, exercitationem repellendus debitis excepturi quae unde impedit deleniti natus tempora quibusdam totam culpa optio? Amet, ea facere numquam, recusandae aperiam eum repellendus consequatur commodi officiis odit eveniet eos non quod unde provident cumque at velit, molestias ipsa suscipit dolores. Consequatur quasi quae vel fugit nobis debitis nulla quidem, aliquam magni sit suscipit maiores, voluptates nostrum aperiam alias? Necessitatibus ad quae dolorum sapiente, quibusdam, nobis error odit veritatis cumque inventore, consequatur placeat eos optio est in iste earum! Quos obcaecati odit qui odio deleniti iste excepturi, id, sapiente ab unde ipsa corrupti! Harum hic quae fugiat eaque, architecto commodi sed, maxime alias voluptatibus quas mollitia non dolor minus neque sit corporis nemo illo. Veniam necessitatibus, rerum, magni neque cumque recusandae dignissimos officiis veritatis magnam ut qui delectus vel soluta ducimus cupiditate placeat ipsa nobis. Nemo sint ipsa esse harum? Pariatur quaerat iste, ea commodi voluptatibus rem delectus? Harum, cumque. Voluptas ducimus ipsam hic dicta ipsum in, ut soluta doloremque? Natus tempora ad accusantium distinctio inventore esse, omnis a tenetur vitae cumque officiis eos ipsam consectetur? Nobis tempora nulla mollitia? Repellat dolorem ipsa dolore eaque ipsum ratione placeat sed culpa voluptas, impedit quis? Aliquam rerum laboriosam odit, quas sequi magnam repellat quasi, nulla optio aliquid tenetur? Eaque iste, aut beatae, voluptas voluptatum laudantium numquam fugit sapiente sit quasi atque cumque architecto reiciendis hic recusandae assumenda aliquid eos cum. Odio consectetur provident dolorem, nobis totam itaque? Nulla impedit repudiandae veniam debitis corrupti odit consequuntur sapiente, reprehenderit architecto aut tenetur ex velit totam iste, fuga blanditiis ratione nam? Nostrum ratione quasi sunt unde adipisci esse, dignissimos quae a facere facilis impedit, rerum quam ducimus libero dolore inventore consequatur consequuntur, quia possimus error eius eligendi reiciendis. Mollitia perspiciatis provident quos veniam, laudantium ex quam culpa voluptatem repellat dolore quis maiores qui cumque. Hic explicabo cumque nihil odit! Necessitatibus, dignissimos. Ipsum voluptas omnis temporibus vitae unde architecto accusamus neque quo non odit. Eum in placeat voluptatem suscipit!
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi magni ab dignissimos ipsam atque modi qui non reprehenderit ullam animi ducimus dicta, soluta, voluptatem dolorem? Officiis nobis nemo repellat, enim perferendis corrupti ipsa quaerat exercitationem consequatur ullam error veritatis ducimus beatae sed optio dignissimos. Quia saepe voluptatem placeat quae alias voluptatibus qui molestiae at modi. Quam, est architecto dolor reprehenderit voluptatibus praesentium consectetur a, rerum, iste vitae quibusdam dolorem magni laboriosam temporibus nulla quae rem. Mollitia, dolores quo, cumque totam, a explicabo laboriosam consectetur veniam cum recusandae vero facilis. Impedit temporibus magnam, dignissimos illo ea modi sunt ut sequi accusantium sit, accusamus recusandae odit earum porro consectetur sapiente placeat praesentium officia suscipit architecto doloremque voluptates atque? Eos ipsa alias recusandae dolorum sint dicta, dolorem fugit vero eius beatae reprehenderit illo assumenda adipisci aliquid delectus doloribus ea fuga soluta, reiciendis quae, consectetur explicabo est natus? Tempora consequuntur perferendis ea iusto fugiat officia, doloribus, commodi illum, quam et odio veritatis ipsa officiis molestias dolore nisi. Doloribus tenetur, repudiandae nesciunt, sapiente fugit possimus modi id consectetur ducimus aliquam magni a, tempore qui expedita. Nesciunt tempore eum culpa magnam molestiae suscipit nemo, aperiam error fugiat ea recusandae obcaecati impedit, nulla dolores saepe quod, eaque id quae hic omnis aut. Quam laudantium praesentium suscipit, eligendi, ut reiciendis vero rem aut saepe animi exercitationem adipisci nulla aliquam, officia pariatur incidunt. Voluptatum fugiat magnam voluptatibus vel omnis saepe vitae consequuntur vero in mollitia. Cupiditate animi dolorum commodi obcaecati harum dignissimos sed in maxime laudantium facere, nihil velit ratione illo numquam saepe odio accusamus. Accusantium consectetur voluptatibus ea deleniti, commodi dolore quidem distinctio provident dicta cupiditate sint sequi labore error nemo sapiente excepturi ipsum? Consectetur dignissimos est officiis eligendi repellendus incidunt magni, dolor non commodi ut blanditiis sapiente sequi velit numquam accusantium reprehenderit delectus iusto praesentium dolores? Consequatur vero, excepturi laudantium eveniet laborum placeat sapiente aliquid sint fugiat. Dolor reiciendis, delectus nam inventore magni necessitatibus deleniti aut, numquam, sint labore dicta facilis sunt illo veritatis obcaecati debitis ratione excepturi eligendi? Iusto, est sed. Autem cumque temporibus earum alias quod facere error amet voluptatem, esse doloribus non dicta eligendi tempora possimus totam officia dolor quo neque? Aperiam a rerum totam, natus quaerat aliquam sed similique laboriosam iste dignissimos doloremque nulla corporis, ut veniam dolorem corrupti, facilis voluptatem laborum recusandae reiciendis nobis! Fugit quia nostrum aspernatur eaque iusto quo minima doloremque delectus dolor eveniet similique iste, ipsa reprehenderit quis sapiente unde asperiores accusamus, blanditiis hic totam modi dignissimos architecto fuga. Officia incidunt praesentium iusto mollitia, repellat voluptatum! Ex ea fuga accusantium distinctio amet maxime. Doloremque beatae iure pariatur, ea magnam maiores quasi. Autem, aperiam cumque? Perspiciatis, sed nulla in asperiores illum delectus molestias reiciendis, et minima quo autem aliquid praesentium ad dolorem ducimus non amet est beatae esse. Doloribus rem quasi quis perferendis beatae reprehenderit aspernatur provident ipsa sed fugiat deserunt velit enim libero, soluta nam aut quisquam ullam delectus! Quam excepturi non quo repellendus quod corrupti harum commodi. Tempore neque recusandae quis assumenda harum ex autem! Nemo dolore expedita et itaque rem doloribus labore nam sed culpa beatae ea, minus saepe illo neque veniam odit. Facilis animi repudiandae voluptatum illo ex totam quisquam fugiat, quibusdam atque non cupiditate obcaecati omnis deserunt nam, aut quasi excepturi eligendi fuga laboriosam libero? Enim quisquam aut architecto temporibus ipsum modi, harum, et voluptatum eveniet repellendus facilis, ea quam ex consequuntur obcaecati quidem nisi. Id qui expedita aperiam exercitationem sequi laboriosam, iusto ducimus accusantium quas! Est quas harum fugit dolore ad excepturi? Corporis quo repellendus harum sapiente libero, suscipit sunt nesciunt laborum impedit placeat possimus quae voluptatum odit molestias accusantium asperiores nostrum incidunt alias quam corrupti omnis veniam quis atque aut. Nesciunt, iste mollitia nulla repellendus ab illum aperiam praesentium! Aut impedit excepturi laborum accusamus consectetur enim voluptas, provident atque beatae repudiandae nobis dicta explicabo vel quis. Nobis facilis quasi eaque maiores adipisci a cumque velit consequatur vitae! Tempore, facilis ducimus sequi debitis ut impedit eos id nihil minima? Dolor natus iusto earum numquam sint adipisci deserunt, error rem quo autem inventore aspernatur maiores ipsum totam quisquam explicabo repellendus. Minima quo dicta eligendi, exercitationem repellendus debitis excepturi quae unde impedit deleniti natus tempora quibusdam totam culpa optio? Amet, ea facere numquam, recusandae aperiam eum repellendus consequatur commodi officiis odit eveniet eos non quod unde provident cumque at velit, molestias ipsa suscipit dolores. Consequatur quasi quae vel fugit nobis debitis nulla quidem, aliquam magni sit suscipit maiores, voluptates nostrum aperiam alias? Necessitatibus ad quae dolorum sapiente, quibusdam, nobis error odit veritatis cumque inventore, consequatur placeat eos optio est in iste earum! Quos obcaecati odit qui odio deleniti iste excepturi, id, sapiente ab unde ipsa corrupti! Harum hic quae fugiat eaque, architecto commodi sed, maxime alias voluptatibus quas mollitia non dolor minus neque sit corporis nemo illo. Veniam necessitatibus, rerum, magni neque cumque recusandae dignissimos officiis veritatis magnam ut qui delectus vel soluta ducimus cupiditate placeat ipsa nobis. Nemo sint ipsa esse harum? Pariatur quaerat iste, ea commodi voluptatibus rem delectus? Harum, cumque. Voluptas ducimus ipsam hic dicta ipsum in, ut soluta doloremque? Natus tempora ad accusantium distinctio inventore esse, omnis a tenetur vitae cumque officiis eos ipsam consectetur? Nobis tempora nulla mollitia? Repellat dolorem ipsa dolore eaque ipsum ratione placeat sed culpa voluptas, impedit quis? Aliquam rerum laboriosam odit, quas sequi magnam repellat quasi, nulla optio aliquid tenetur? Eaque iste, aut beatae, voluptas voluptatum laudantium numquam fugit sapiente sit quasi atque cumque architecto reiciendis hic recusandae assumenda aliquid eos cum. Odio consectetur provident dolorem, nobis totam itaque? Nulla impedit repudiandae veniam debitis corrupti odit consequuntur sapiente, reprehenderit architecto aut tenetur ex velit totam iste, fuga blanditiis ratione nam? Nostrum ratione quasi sunt unde adipisci esse, dignissimos quae a facere facilis impedit, rerum quam ducimus libero dolore inventore consequatur consequuntur, quia possimus error eius eligendi reiciendis. Mollitia perspiciatis provident quos veniam, laudantium ex quam culpa voluptatem repellat dolore quis maiores qui cumque. Hic explicabo cumque nihil odit! Necessitatibus, dignissimos. Ipsum voluptas omnis temporibus vitae unde architecto accusamus neque quo non odit. Eum in placeat voluptatem suscipit!
-        </main>
-     );
-}
- 
+  const stats = [
+    { label: "Total Revenue", value: "KES 45,200", icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Bookings Today", value: "8", icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Total Clients", value: "156", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Avg Rating", value: "4.8★", icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" }
+  ];
+
+  const recentBookings = [
+    { client: "Sarah M.", service: "Hair Styling", time: "10:00 AM", status: "confirmed" },
+    { client: "Jane D.", service: "Makeup", time: "2:30 PM", status: "pending" },
+    { client: "Mary K.", service: "Nail Art", time: "4:00 PM", status: "completed" }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <div className="text-sm text-gray-500">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div key={index} className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                </div>
+                <div className={`${stat.bg} p-3 rounded-full`}>
+                  <Icon className={`w-6 h-6 ${stat.color}`} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Today's Bookings */}
+        <div className="lg:col-span-2 bg-white rounded-lg shadow">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Today's Bookings</h2>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {recentBookings.map((booking, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
+                      <span className="text-rose-600 font-semibold">{booking.client.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{booking.client}</p>
+                      <p className="text-sm text-gray-500">{booking.service}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center text-gray-500">
+                      <Clock className="w-4 h-4 mr-1" />
+                      <span className="text-sm">{booking.time}</span>
+                    </div>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {booking.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
+          </div>
+          <div className="p-6 space-y-4">
+            <button className="w-full flex items-center justify-center px-4 py-3 bg-rose-primary text-white rounded-lg hover:bg-rose-dark transition-colors">
+              <Calendar className="w-5 h-5 mr-2" />
+              View Schedule
+            </button>
+            <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              <Users className="w-5 h-5 mr-2" />
+              Manage Clients
+            </button>
+            <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              <TrendingUp className="w-5 h-5 mr-2" />
+              View Reports
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Performance Overview */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">This Week's Performance</h2>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-rose-primary">24</div>
+              <div className="text-sm text-gray-600">Bookings Completed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">KES 12,400</div>
+              <div className="text-sm text-gray-600">Revenue Generated</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">18</div>
+              <div className="text-sm text-gray-600">New Clients</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-600">4.8★</div>
+              <div className="text-sm text-gray-600">Average Rating</div>
+              <div className="text-xs text-gray-500 mt-1">(from 156 reviews)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default ProviderDashboard;
+ 

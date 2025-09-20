@@ -1,0 +1,101 @@
+"use client";
+
+import { DollarSign, TrendingUp, Calendar, Download } from "lucide-react";
+
+const EarningsPage = () => {
+  const earningsData = [
+    { month: "January", amount: 15200, bookings: 45 },
+    { month: "February", amount: 18500, bookings: 52 },
+    { month: "March", amount: 22100, bookings: 61 },
+    { month: "April", amount: 19800, bookings: 58 },
+    { month: "May", amount: 25400, bookings: 72 },
+    { month: "June", amount: 28900, bookings: 81 }
+  ];
+
+  const totalEarnings = earningsData.reduce((sum, item) => sum + item.amount, 0);
+  const totalBookings = earningsData.reduce((sum, item) => sum + item.bookings, 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Earnings</h1>
+        <button className="flex items-center gap-2 px-4 py-2 bg-rose-primary text-white rounded-lg hover:bg-rose-dark">
+          <Download className="w-4 h-4" />
+          Export Report
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Earnings</p>
+              <p className="text-2xl font-bold text-gray-900">KES {totalEarnings.toLocaleString()}</p>
+            </div>
+            <div className="bg-green-50 p-3 rounded-full">
+              <DollarSign className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Bookings</p>
+              <p className="text-2xl font-bold text-gray-900">{totalBookings}</p>
+            </div>
+            <div className="bg-blue-50 p-3 rounded-full">
+              <Calendar className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Average per Booking</p>
+              <p className="text-2xl font-bold text-gray-900">KES {Math.round(totalEarnings / totalBookings)}</p>
+            </div>
+            <div className="bg-purple-50 p-3 rounded-full">
+              <TrendingUp className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Monthly Breakdown */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Monthly Breakdown</h2>
+        </div>
+        <div className="p-6">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 font-medium text-gray-900">Month</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-900">Earnings</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-900">Bookings</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-900">Average</th>
+                </tr>
+              </thead>
+              <tbody>
+                {earningsData.map((item, index) => (
+                  <tr key={index} className="border-b border-gray-100">
+                    <td className="py-3 px-4 text-gray-900">{item.month}</td>
+                    <td className="py-3 px-4 text-green-600 font-semibold">KES {item.amount.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-gray-900">{item.bookings}</td>
+                    <td className="py-3 px-4 text-gray-900">KES {Math.round(item.amount / item.bookings)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EarningsPage;
