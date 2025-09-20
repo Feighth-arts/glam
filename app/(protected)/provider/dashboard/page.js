@@ -1,13 +1,14 @@
 "use client";
 
 import { Calendar, DollarSign, Users, Star, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { PROVIDER_DATA } from "@/lib/constants";
 
 const ProviderDashboard = () => {
   const stats = [
-    { label: "Total Revenue", value: "KES 45,200", icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Bookings Today", value: "8", icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Total Clients", value: "156", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Avg Rating", value: "4.8★", icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" }
+    { label: "Total Revenue", value: `KES ${(PROVIDER_DATA?.stats?.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Bookings Today", value: (PROVIDER_DATA?.stats?.bookingsToday || 0).toString(), icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Total Clients", value: (PROVIDER_DATA?.stats?.totalClients || 0).toString(), icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Avg Rating", value: `${PROVIDER_DATA?.stats?.avgRating || 0}★`, icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" }
   ];
 
   const recentBookings = [
@@ -114,21 +115,21 @@ const ProviderDashboard = () => {
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-rose-primary">24</div>
+              <div className="text-2xl font-bold text-rose-primary">{PROVIDER_DATA?.stats?.weeklyBookings || 0}</div>
               <div className="text-sm text-gray-600">Bookings Completed</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">KES 12,400</div>
+              <div className="text-2xl font-bold text-green-600">KES {(PROVIDER_DATA?.stats?.weeklyRevenue || 0).toLocaleString()}</div>
               <div className="text-sm text-gray-600">Revenue Generated</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">18</div>
+              <div className="text-2xl font-bold text-blue-600">{PROVIDER_DATA?.stats?.newClients || 0}</div>
               <div className="text-sm text-gray-600">New Clients</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">4.8★</div>
+              <div className="text-2xl font-bold text-yellow-600">{PROVIDER_DATA?.stats?.avgRating || 0}★</div>
               <div className="text-sm text-gray-600">Average Rating</div>
-              <div className="text-xs text-gray-500 mt-1">(from 156 reviews)</div>
+              <div className="text-xs text-gray-500 mt-1">(from {PROVIDER_DATA?.stats?.totalClients || 0} reviews)</div>
             </div>
           </div>
         </div>

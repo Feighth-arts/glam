@@ -16,6 +16,7 @@ import {
   Scissors,
   Sparkles
 } from "lucide-react";
+import { PROVIDER_DATA, AVAILABLE_SERVICES } from "@/lib/constants";
 
 // UpdateProfileForm Component
 function UpdateProfileForm({ profile, onClose, onUpdate }) {
@@ -47,12 +48,7 @@ function UpdateProfileForm({ profile, onClose, onUpdate }) {
   const [selectedService, setSelectedService] = useState('');
   
   // Mock services data - in real app, this would come from services state/API
-  const availableServices = [
-    { id: 1, name: "Hair Styling" },
-    { id: 2, name: "Makeup" },
-    { id: 3, name: "Nail Art" },
-    { id: 4, name: "Facial Treatment" }
-  ];
+  const availableServices = AVAILABLE_SERVICES;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const daysOfWeek = [
@@ -533,7 +529,7 @@ export default function ProviderProfile({ profile: initialProfile = {} }) {
     avatar: "/api/placeholder/150/150",
     specialty: "Nail Artist & Spa Specialist",
     rating: 4.8,
-    clients: 850,
+    clients: PROVIDER_DATA.profile.clients,
     joinDate: "2019",
     verified: true,
     workingDays: {

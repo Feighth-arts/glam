@@ -5,36 +5,10 @@ import { IoMdAdd } from 'react-icons/io';
 import { FaStar } from 'react-icons/fa';
 import { MdModeEdit, MdDelete, MdSave, MdClose, MdSchedule } from 'react-icons/md';
 import { Clock, Calendar } from 'lucide-react';
+import { PROVIDER_DATA } from '@/lib/constants';
 
 // Mock data for initial testing
-const mockServices = [
-  {
-    id: 1,
-    name: "Hair Styling",
-    price: 2500,
-    points: 25,
-    duration: 90,
-    ratings: 4.5,
-    totalRatings: 128,
-    availability: {
-      days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-      timeSlots: ['09:00', '11:00', '14:00', '16:00']
-    }
-  },
-  {
-    id: 2,
-    name: "Makeup",
-    price: 3000,
-    points: 30,
-    duration: 60,
-    ratings: 4.8,
-    totalRatings: 95,
-    availability: {
-      days: ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-      timeSlots: ['10:00', '13:00', '15:00', '17:00']
-    }
-  }
-];
+const mockServices = PROVIDER_DATA.services;
 
 export default function ServicesPage() {
   const [services, setServices] = useState(mockServices);
