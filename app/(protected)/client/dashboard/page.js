@@ -1,7 +1,7 @@
 const ClientDashboard = () => {
     return ( 
         <main>
-            Client Dashboard
+            This is Client Dashboard
         </main>
      );
 }
