@@ -32,13 +32,13 @@ const Sidebar = () => {
   const pathname = usePathname();
 
   const menuItems = [
-    { icon: RiDashboard2Fill, label: "Dashboard", href: "/provider/dashboard" },
-    { icon: FaBookBookmark, label: "Bookings", href: "/provider/bookings" },
-    { icon: MdSpa, label: "Services", href: "/provider/services" },
-    { icon: MdAttachMoney, label: "Earnings", href: "/provider/earnings" },
-    { icon: IoMdNotifications, label: "Notifications", href: "/provider/notifications" },
-    { icon: TbReportAnalytics, label: "Reports", href: "/provider/reports" },
-    { icon: CgProfile, label: "Profile", href: "/provider/profile" },
+    { icon: RiDashboard2Fill, label: "Dashboard", href: "/client/dashboard" },
+    { icon: FaBookBookmark, label: "Bookings", href: "/client/bookings" },
+    { icon: MdSpa, label: "Services", href: "/client/services" },
+    { icon: IoMdNotifications, label: "Notifications", href: "/client/notifications" },
+    { icon: MdAttachMoney, label: "Rewards", href: "/client/rewards" },
+    { icon: TbReportAnalytics, label: "Reports", href: "/client/reports" },
+    { icon: CgProfile, label: "Profile", href: "/client/profile" },
   ];
 
   return (
