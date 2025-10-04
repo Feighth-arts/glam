@@ -1,15 +1,25 @@
 "use client";
 
 import { Calendar, DollarSign, Users, Star, TrendingUp, Clock, CheckCircle } from "lucide-react";
-import { PROVIDER_DATA } from "@/lib/constants";
+import { USERS, getProviderStats } from "@/lib/normalized-data";
+import { useRouter } from "next/navigation";
 
 const ProviderDashboard = () => {
+  const router = useRouter();
+  const providerId = "prov_001"; // In real app, get from auth context
+  const provider = USERS.providers.find(p => p.id === providerId);
+  const providerStats = getProviderStats(providerId);
+
   const stats = [
-    { label: "Total Revenue", value: `KES ${(PROVIDER_DATA?.stats?.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Bookings Today", value: (PROVIDER_DATA?.stats?.bookingsToday || 0).toString(), icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Total Clients", value: (PROVIDER_DATA?.stats?.totalClients || 0).toString(), icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Avg Rating", value: `${PROVIDER_DATA?.stats?.avgRating || 0}★`, icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" }
+    { label: "Total Revenue", value: `KES ${providerStats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Bookings Today", value: "3", icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" }, // Mock today's bookings
+    { label: "Total Clients", value: provider?.totalRatings?.toString() || "0", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Avg Rating", value: `${provider?.rating || 0}★`, icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" }
   ];
+
+  const handleViewSchedule = () => router.push('/provider/bookings');
+  const handleManageClients = () => alert('Client management coming soon!');
+  const handleViewReports = () => router.push('/provider/reports');
 
   const recentBookings = [
     { client: "Sarah M.", service: "Hair Styling", time: "10:00 AM", status: "confirmed" },
@@ -91,15 +101,15 @@ const ProviderDashboard = () => {
             <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
           </div>
           <div className="p-6 space-y-4">
-            <button className="w-full flex items-center justify-center px-4 py-3 bg-rose-primary text-white rounded-lg hover:bg-rose-dark transition-colors">
+            <button onClick={handleViewSchedule} className="w-full flex items-center justify-center px-4 py-3 bg-rose-primary text-white rounded-lg hover:bg-rose-dark transition-colors">
               <Calendar className="w-5 h-5 mr-2" />
               View Schedule
             </button>
-            <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+            <button onClick={handleManageClients} className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               <Users className="w-5 h-5 mr-2" />
               Manage Clients
             </button>
-            <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+            <button onClick={handleViewReports} className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               <TrendingUp className="w-5 h-5 mr-2" />
               View Reports
             </button>
@@ -115,21 +125,21 @@ const ProviderDashboard = () => {
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-rose-primary">{PROVIDER_DATA?.stats?.weeklyBookings || 0}</div>
+              <div className="text-2xl font-bold text-rose-primary">{providerStats.completedBookings}</div>
               <div className="text-sm text-gray-600">Bookings Completed</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">KES {(PROVIDER_DATA?.stats?.weeklyRevenue || 0).toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Revenue Generated</div>
+              <div className="text-2xl font-bold text-green-600">KES {Math.round(providerStats.totalRevenue * 0.3).toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Weekly Revenue</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{PROVIDER_DATA?.stats?.newClients || 0}</div>
+              <div className="text-2xl font-bold text-blue-600">8</div>
               <div className="text-sm text-gray-600">New Clients</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{PROVIDER_DATA?.stats?.avgRating || 0}★</div>
+              <div className="text-2xl font-bold text-yellow-600">{provider?.rating || 0}★</div>
               <div className="text-sm text-gray-600">Average Rating</div>
-              <div className="text-xs text-gray-500 mt-1">(from {PROVIDER_DATA?.stats?.totalClients || 0} reviews)</div>
+              <div className="text-xs text-gray-500 mt-1">(from {provider?.totalRatings || 0} reviews)</div>
             </div>
           </div>
         </div>

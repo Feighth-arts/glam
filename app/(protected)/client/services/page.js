@@ -2,41 +2,30 @@
 
 import { useState } from 'react';
 import { Search, MapPin, Star, Clock, Gift, Calendar } from 'lucide-react';
-import { AVAILABLE_SERVICES, PROVIDER_DATA } from '@/lib/constants';
+import { SERVICE_CATALOG, USERS } from '@/lib/normalized-data';
+import { useRouter } from 'next/navigation';
 
 export default function ClientServicesPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
 
-  // Mock providers data - in real app, this would come from API
-  const providers = [
-    {
-      id: 1,
-      name: "Sarah Beauty Studio",
-      location: "Westlands, Nairobi",
-      rating: 4.8,
-      reviews: 156,
-      services: PROVIDER_DATA.services,
-      distance: "2.1 km",
-      image: "/provider1.jpg"
-    },
-    {
-      id: 2,
-      name: "Glamour Palace",
-      location: "CBD, Nairobi",
-      rating: 4.6,
-      reviews: 89,
-      services: [
-        { id: 1, name: "Hair Styling", price: 3000, points: 30, duration: 90, ratings: 4.7 },
-        { id: 3, name: "Nail Art", price: 1800, points: 18, duration: 60, ratings: 4.5 }
-      ],
-      distance: "1.5 km",
-      image: "/provider2.jpg"
-    }
-  ];
+  const providers = USERS.providers.map(provider => ({
+    ...provider,
+    services: provider.services.map(serviceId => {
+      const service = SERVICE_CATALOG.find(s => s.id === serviceId);
+      return {
+        ...service,
+        price: service?.basePrice,
+        ratings: provider.rating
+      };
+    }).filter(Boolean),
+    reviews: provider.totalRatings,
+    distance: "2.1 km" // Mock distance
+  }));
 
-  const categories = ['all', 'Hair', 'Makeup', 'Nails', 'Facial'];
+  const categories = ['all', ...new Set(SERVICE_CATALOG.map(s => s.category))];
 
   const filteredProviders = providers.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,8 +42,13 @@ export default function ClientServicesPage() {
   });
 
   const handleBookService = (provider, service) => {
-    console.log('Booking service:', { provider: provider.name, service: service.name });
-    // Backend integration point
+    // In real app, this would open booking modal or navigate to booking flow
+    alert(`Booking ${service.name} with ${provider.name}. Booking system coming soon!`);
+  };
+
+  const handleViewProfile = (providerId) => {
+    // In real app, navigate to provider profile
+    alert('Provider profile view coming soon!');
   };
 
   return (
@@ -135,7 +129,10 @@ export default function ClientServicesPage() {
                     </div>
                   </div>
                 </div>
-                <button className="px-4 py-2 border border-rose-primary text-rose-primary rounded-lg hover:bg-rose-50 transition-colors">
+                <button 
+                  onClick={() => handleViewProfile(provider.id)}
+                  className="px-4 py-2 border border-rose-primary text-rose-primary rounded-lg hover:bg-rose-50 transition-colors"
+                >
                   View Profile
                 </button>
               </div>

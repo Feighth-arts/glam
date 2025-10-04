@@ -5,10 +5,26 @@ import { IoMdAdd } from 'react-icons/io';
 import { FaStar } from 'react-icons/fa';
 import { MdModeEdit, MdDelete, MdSave, MdClose, MdSchedule } from 'react-icons/md';
 import { Clock, Calendar } from 'lucide-react';
-import { PROVIDER_DATA } from '@/lib/constants';
+import { SERVICE_CATALOG, USERS } from '@/lib/normalized-data';
 
-// Mock data for initial testing
-const mockServices = PROVIDER_DATA.services;
+// Get provider's services from normalized data
+const providerId = "prov_001";
+const provider = USERS.providers.find(p => p.id === providerId);
+const mockServices = provider?.services.map(serviceId => {
+  const service = SERVICE_CATALOG.find(s => s.id === serviceId);
+  return {
+    ...service,
+    price: service?.basePrice,
+    points: service?.points,
+    duration: service?.duration,
+    ratings: provider.rating,
+    totalRatings: provider.totalRatings,
+    availability: {
+      days: provider.workingDays,
+      timeSlots: ['09:00', '11:00', '14:00', '16:00']
+    }
+  };
+}).filter(Boolean) || [];
 
 export default function ServicesPage() {
   const [services, setServices] = useState(mockServices);

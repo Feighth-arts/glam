@@ -2,15 +2,17 @@
 
 import { useState } from 'react';
 import { Gift, Star, Clock, TrendingUp, Award } from 'lucide-react';
-import { CLIENT_DATA, REWARDS_CATALOG, POINTS_CONFIG } from '@/lib/constants';
+import { USERS, REWARDS_CATALOG, PLATFORM_CONFIG, getUserTier } from '@/lib/normalized-data';
 
 export default function ClientRewardsPage() {
   const [activeTab, setActiveTab] = useState('available');
-  const currentPoints = CLIENT_DATA?.stats?.pointsEarned || 0;
-  const tier = CLIENT_DATA?.profile?.tier || 'Bronze';
+  const clientId = "client_001";
+  const client = USERS.clients.find(c => c.id === clientId);
+  const currentPoints = client?.stats?.currentPoints || 0;
+  const tier = getUserTier(currentPoints);
 
   const getTierProgress = () => {
-    const tiers = POINTS_CONFIG.tiers;
+    const tiers = PLATFORM_CONFIG.tiers;
     if (tier === 'Bronze') return { current: currentPoints, next: tiers.gold.min, progress: (currentPoints / tiers.gold.min) * 100 };
     if (tier === 'Gold') return { current: currentPoints, next: tiers.platinum.min, progress: ((currentPoints - tiers.gold.min) / (tiers.platinum.min - tiers.gold.min)) * 100 };
     return { current: currentPoints, next: null, progress: 100 };
@@ -20,8 +22,9 @@ export default function ClientRewardsPage() {
 
   const handleRedeem = (reward) => {
     if (!canRedeem(reward)) return;
-    console.log('Redeeming reward:', reward);
-    // Backend integration point
+    if (confirm(`Redeem ${reward.name} for ${reward.points} points?`)) {
+      alert('Reward redeemed successfully! Check your bookings to use it.');
+    }
   };
 
   const tierProgress = getTierProgress();
@@ -63,7 +66,7 @@ export default function ClientRewardsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Earned</p>
-              <p className="text-2xl font-bold text-green-600">{CLIENT_DATA?.stats?.lifetimePoints || 0}</p>
+              <p className="text-2xl font-bold text-green-600">{client?.stats?.lifetimePoints || 0}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-600" />
           </div>
@@ -72,7 +75,7 @@ export default function ClientRewardsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Redeemed</p>
-              <p className="text-2xl font-bold text-purple-600">{CLIENT_DATA?.stats?.pointsRedeemed || 0}</p>
+              <p className="text-2xl font-bold text-purple-600">{client?.stats?.pointsRedeemed || 0}</p>
             </div>
             <Gift className="w-8 h-8 text-purple-600" />
           </div>
@@ -175,7 +178,7 @@ export default function ClientRewardsPage() {
 
           {activeTab === 'redeemed' && (
             <div className="space-y-4">
-              {CLIENT_DATA?.rewards?.redeemed?.map((reward) => (
+              {client?.rewards?.redeemed?.map((reward) => (
                 <div key={reward.id} className="flex justify-between items-center p-4 border rounded-lg">
                   <div>
                     <h4 className="font-medium">{reward.name}</h4>
@@ -200,7 +203,7 @@ export default function ClientRewardsPage() {
 
           {activeTab === 'history' && (
             <div className="space-y-4">
-              {CLIENT_DATA?.pointsHistory?.map((entry) => (
+              {client?.pointsHistory?.map((entry) => (
                 <div key={entry.id} className="flex justify-between items-center p-4 border rounded-lg">
                   <div>
                     <p className="font-medium">

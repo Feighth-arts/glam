@@ -2,10 +2,15 @@
 
 import { useState } from 'react';
 import { BarChart, TrendingUp, Calendar, DollarSign, Download, Star } from 'lucide-react';
-import { CLIENT_DATA } from '@/lib/constants';
+import { USERS, BOOKINGS, getClientStats } from '@/lib/normalized-data';
+import { generateClientReport } from '@/lib/pdf-generator';
 
 export default function ClientReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('6months');
+  const clientId = "client_001";
+  const client = USERS.clients.find(c => c.id === clientId);
+  const clientStats = getClientStats(clientId);
+  const clientBookings = BOOKINGS.filter(b => b.clientId === clientId);
   
   // Mock analytics data - in real app, this would come from API
   const analyticsData = {
@@ -32,13 +37,29 @@ export default function ClientReportsPage() {
     ]
   };
 
-  const totalSpent = analyticsData.spending['6months'].reduce((sum, month) => sum + month.amount, 0);
-  const totalBookings = analyticsData.spending['6months'].reduce((sum, month) => sum + month.bookings, 0);
-  const avgSpending = totalSpent / analyticsData.spending['6months'].length;
+  const totalSpent = clientStats.totalSpent;
+  const totalBookings = clientStats.totalBookings;
+  const avgSpending = totalSpent / 6; // 6 months average
 
   const downloadReport = (type) => {
-    console.log(`Downloading ${type} report`);
-    // Backend integration point for PDF generation
+    const reportData = {
+      spending: {
+        monthlySpending: analyticsData.spending['6months'],
+        totalSpent,
+        totalBookings
+      },
+      services: {
+        serviceBreakdown: analyticsData.serviceBreakdown
+      },
+      points: {
+        totalPointsEarned: client?.stats?.lifetimePoints || 0,
+        pointsRedeemed: client?.stats?.pointsRedeemed || 0,
+        currentPoints: client?.stats?.currentPoints || 0,
+        tier: client?.tier || 'Bronze'
+      }
+    };
+    
+    generateClientReport(type, reportData[type] || {});
   };
 
   return (
@@ -98,7 +119,7 @@ export default function ClientReportsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Points Earned</p>
-              <p className="text-2xl font-bold text-rose-primary">{CLIENT_DATA?.stats?.lifetimePoints || 0}</p>
+              <p className="text-2xl font-bold text-rose-primary">{client?.stats?.lifetimePoints || 0}</p>
             </div>
             <Star className="w-8 h-8 text-rose-primary" />
           </div>
