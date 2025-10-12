@@ -1,33 +1,32 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IoMdAdd } from 'react-icons/io';
 import { FaStar } from 'react-icons/fa';
 import { MdModeEdit, MdDelete, MdSave, MdClose, MdSchedule } from 'react-icons/md';
 import { Clock, Calendar } from 'lucide-react';
-import { SERVICE_CATALOG, USERS } from '@/lib/normalized-data';
-
-// Get provider's services from normalized data
-const providerId = "prov_001";
-const provider = USERS.providers.find(p => p.id === providerId);
-const mockServices = provider?.services.map(serviceId => {
-  const service = SERVICE_CATALOG.find(s => s.id === serviceId);
-  return {
-    ...service,
-    price: service?.basePrice,
-    points: service?.points,
-    duration: service?.duration,
-    ratings: provider.rating,
-    totalRatings: provider.totalRatings,
-    availability: {
-      days: provider.workingDays,
-      timeSlots: ['09:00', '11:00', '14:00', '16:00']
-    }
-  };
-}).filter(Boolean) || [];
 
 export default function ServicesPage() {
-  const [services, setServices] = useState(mockServices);
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProviderServices = async () => {
+      try {
+        const response = await fetch('/api/provider/services');
+        if (!response.ok) throw new Error('Failed to fetch services');
+        const data = await response.json();
+        setServices(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProviderServices();
+  }, []);
   const [editingId, setEditingId] = useState(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newService, setNewService] = useState({
@@ -65,21 +64,26 @@ export default function ServicesPage() {
     });
   };
 
-  const handleSaveNew = () => {
+  const handleSaveNew = async () => {
     if (!newService.name || !newService.price || !newService.points || !newService.duration) {
       return;
     }
 
-    setServices(prev => [...prev, {
-      id: Date.now(),
-      ...newService,
-      price: Number(newService.price),
-      points: Number(newService.points),
-      duration: Number(newService.duration),
-      ratings: 0,
-      totalRatings: 0
-    }]);
-    setIsAddingNew(false);
+    try {
+      const response = await fetch('/api/provider/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newService)
+      });
+      
+      if (!response.ok) throw new Error('Failed to create service');
+      const createdService = await response.json();
+      
+      setServices(prev => [...prev, createdService]);
+      setIsAddingNew(false);
+    } catch (err) {
+      console.error('Error creating service:', err);
+    }
   };
 
   const handleEdit = (service) => {
@@ -93,19 +97,24 @@ export default function ServicesPage() {
     });
   };
 
-  const handleSaveEdit = (id) => {
-    setServices(prev => prev.map(service => 
-      service.id === id 
-        ? { 
-            ...service, 
-            ...newService,
-            price: Number(newService.price),
-            points: Number(newService.points),
-            duration: Number(newService.duration)
-          }
-        : service
-    ));
-    setEditingId(null);
+  const handleSaveEdit = async (id) => {
+    try {
+      const response = await fetch(`/api/provider/services/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newService)
+      });
+      
+      if (!response.ok) throw new Error('Failed to update service');
+      const updatedService = await response.json();
+      
+      setServices(prev => prev.map(service => 
+        service.id === id ? updatedService : service
+      ));
+      setEditingId(null);
+    } catch (err) {
+      console.error('Error updating service:', err);
+    }
   };
 
   const toggleDay = (day) => {
@@ -143,9 +152,20 @@ export default function ServicesPage() {
     }));
   };
 
-  const handleDelete = (id) => {
-    // You can add confirmation dialog here
-    setServices(prev => prev.filter(service => service.id !== id));
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this service?')) return;
+    
+    try {
+      const response = await fetch(`/api/provider/services/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) throw new Error('Failed to delete service');
+      
+      setServices(prev => prev.filter(service => service.id !== id));
+    } catch (err) {
+      console.error('Error deleting service:', err);
+    }
   };
 
   const ServiceCard = ({ service }) => {
@@ -337,6 +357,22 @@ export default function ServicesPage() {
       </div>
     );
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-gray-600">Loading services...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

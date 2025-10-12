@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Phone, 
   Mail, 
@@ -16,7 +16,6 @@ import {
   Scissors,
   Sparkles
 } from "lucide-react";
-import { PROVIDER_DATA, AVAILABLE_SERVICES } from "@/lib/constants";
 
 // UpdateProfileForm Component
 function UpdateProfileForm({ profile, onClose, onUpdate }) {
@@ -47,8 +46,23 @@ function UpdateProfileForm({ profile, onClose, onUpdate }) {
   const [tempTimeSlot, setTempTimeSlot] = useState('');
   const [selectedService, setSelectedService] = useState('');
   
-  // Mock services data - in real app, this would come from services state/API
-  const availableServices = AVAILABLE_SERVICES;
+  const [availableServices, setAvailableServices] = useState([]);
+  
+  useEffect(() => {
+    // Fetch available services for the form
+    const fetchServices = async () => {
+      try {
+        const response = await fetch('/api/services');
+        if (response.ok) {
+          const services = await response.json();
+          setAvailableServices(services.map(s => ({ id: s.id, name: s.name })));
+        }
+      } catch (err) {
+        console.error('Error fetching services:', err);
+      }
+    };
+    fetchServices();
+  }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const daysOfWeek = [
@@ -519,40 +533,72 @@ function UpdateProfileForm({ profile, onClose, onUpdate }) {
 // Main ProviderProfile Component
 export default function ProviderProfile({ profile: initialProfile = {} }) {
   const [open, setOpen] = useState(false);
-  const [profile, setProfile] = useState({
-    name: "Sarah Beauty Studio",
-    email: "sarah@beautystudio.com",
-    phone: "+1 (555) 123-4567",
-    location: "Downtown Beauty Plaza, San Francisco",
-    experience: "5",
-    license: "Cosmetology License #CS-2019-4567",
-    avatar: "/api/placeholder/150/150",
-    specialty: "Nail Artist & Spa Specialist",
-    rating: 4.8,
-    clients: PROVIDER_DATA.profile.clients,
-    joinDate: "2019",
-    verified: true,
-    workingDays: {
-      monday: true,
-      tuesday: true,
-      wednesday: true,
-      thursday: true,
-      friday: true,
-      saturday: true,
-      sunday: false
-    },
-    workingHours: {
-      start: "09:00",
-      end: "18:00"
-    },
-    ...initialProfile
-  });
+  const [profile, setProfile] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleProfileUpdate = (updatedData) => {
-    setProfile(prev => ({
-      ...prev,
-      ...updatedData
-    }));
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch('/api/users/profile');
+      if (!response.ok) throw new Error('Failed to fetch profile');
+      const data = await response.json();
+      
+      setProfile({
+        name: data.name || "Provider",
+        email: data.email || "",
+        phone: data.phone || "",
+        location: data.location || "",
+        experience: data.experience || "0",
+        license: data.license || "",
+        avatar: data.avatar || "",
+        specialty: data.specialty || "Beauty Service Provider",
+        rating: data.stats?.avgRating || 0,
+        clients: data.stats?.totalClients || 0,
+        joinDate: new Date(data.createdAt).getFullYear().toString() || "2024",
+        verified: data.verified || false,
+        workingDays: data.workingDays || {
+          monday: true,
+          tuesday: true,
+          wednesday: true,
+          thursday: true,
+          friday: true,
+          saturday: true,
+          sunday: false
+        },
+        workingHours: data.workingHours || {
+          start: "09:00",
+          end: "18:00"
+        },
+        ...initialProfile
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProfileUpdate = async (updatedData) => {
+    try {
+      const response = await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      });
+      
+      if (!response.ok) throw new Error('Failed to update profile');
+      
+      setProfile(prev => ({
+        ...prev,
+        ...updatedData
+      }));
+    } catch (err) {
+      console.error('Error updating profile:', err);
+    }
   };
 
   const formatWorkingDays = () => {
@@ -582,6 +628,22 @@ export default function ProviderProfile({ profile: initialProfile = {} }) {
 
     return `${formatTime(profile.workingHours.start)} - ${formatTime(profile.workingHours.end)}`;
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-gray-600">Loading profile...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div 

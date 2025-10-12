@@ -1,22 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from 'react';
 import { Star, Clock, DollarSign } from "lucide-react";
-import { SERVICE_CATALOG } from "@/lib/normalized-data";
 import Link from "next/link";
 
 export default function ServicesPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const categories = ["All", "Hair", "Makeup", "Nails", "Skincare", "Massage"];
 
-  const filteredServices = SERVICE_CATALOG.filter(service => {
-    const matchesCategory = selectedCategory === "All" || service.category === selectedCategory;
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await fetch('/api/services');
+        if (!response.ok) throw new Error('Failed to fetch services');
+        const data = await response.json();
+        setServices(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  const filteredServices = services.filter(service => {
+    const categoryName = service.category?.name || 'Uncategorized';
+    const matchesCategory = selectedCategory === "All" || categoryName === selectedCategory;
     const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (service.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading services...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,7 +98,7 @@ export default function ServicesPage() {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-semibold text-dark-blue">{service.name}</h3>
                   <span className="text-xs bg-rose-100 text-rose-800 px-2 py-1 rounded-full">
-                    {service.category}
+                    {service.category?.name || 'Service'}
                   </span>
                 </div>
                 
@@ -71,7 +107,7 @@ export default function ServicesPage() {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-sm text-gray-500">
                     <DollarSign className="w-4 h-4 mr-1" />
-                    <span>KES {service.basePrice}</span>
+                    <span>KES {parseFloat(service.basePrice).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <Clock className="w-4 h-4 mr-1" />
@@ -79,7 +115,7 @@ export default function ServicesPage() {
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <Star className="w-4 h-4 mr-1 fill-current text-yellow-400" />
-                    <span>4.5 (25 reviews)</span>
+                    <span>{(service.avgRating || 0).toFixed(1)} ({service.totalReviews || 0} reviews)</span>
                   </div>
                 </div>
 

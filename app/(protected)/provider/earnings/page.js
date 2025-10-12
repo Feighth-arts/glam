@@ -1,19 +1,55 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, Calendar, Download } from "lucide-react";
 
 const EarningsPage = () => {
-  const earningsData = [
-    { month: "January", amount: 15200, bookings: 45 },
-    { month: "February", amount: 18500, bookings: 52 },
-    { month: "March", amount: 22100, bookings: 61 },
-    { month: "April", amount: 19800, bookings: 58 },
-    { month: "May", amount: 25400, bookings: 72 },
-    { month: "June", amount: 28900, bookings: 81 }
-  ];
+  const [earningsData, setEarningsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchEarningsData();
+  }, []);
+
+  const fetchEarningsData = async () => {
+    try {
+      const response = await fetch('/api/dashboard');
+      if (!response.ok) throw new Error('Failed to fetch earnings data');
+      const data = await response.json();
+      
+      // Transform dashboard data to earnings format
+      const monthlyData = data.monthlyStats || [];
+      setEarningsData(monthlyData.map(stat => ({
+        month: stat.month,
+        amount: stat.revenue || 0,
+        bookings: stat.bookings || 0
+      })));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const totalEarnings = earningsData.reduce((sum, item) => sum + item.amount, 0);
   const totalBookings = earningsData.reduce((sum, item) => sum + item.bookings, 0);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-gray-600">Loading earnings data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

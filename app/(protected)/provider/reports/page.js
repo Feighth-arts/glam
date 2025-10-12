@@ -1,15 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, FileText, BarChart3, Users, Calendar, DollarSign } from "lucide-react";
-import { USERS, getProviderStats } from '@/lib/normalized-data';
 import { generateProviderReport } from '@/lib/pdf-generator';
 
 const ReportsPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
-  const providerId = "prov_001";
-  const provider = USERS.providers.find(p => p.id === providerId);
-  const providerStats = getProviderStats(providerId);
+  const [providerStats, setProviderStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchProviderStats();
+  }, []);
+
+  const fetchProviderStats = async () => {
+    try {
+      const [dashboardResponse, profileResponse, servicesResponse] = await Promise.all([
+        fetch('/api/dashboard'),
+        fetch('/api/users/profile'),
+        fetch('/api/provider/services')
+      ]);
+      
+      if (!dashboardResponse.ok || !profileResponse.ok || !servicesResponse.ok) {
+        throw new Error('Failed to fetch provider data');
+      }
+      
+      const dashboardData = await dashboardResponse.json();
+      const profileData = await profileResponse.json();
+      const servicesData = await servicesResponse.json();
+      
+      setProviderStats({
+        totalBookings: dashboardData.totalBookings || 0,
+        totalRevenue: dashboardData.totalRevenue || 0,
+        totalCommission: dashboardData.totalCommission || 0,
+        completedBookings: dashboardData.completedBookings || 0,
+        rating: profileData.stats?.avgRating || 0,
+        services: servicesData || []
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const reportCategories = [
     {
@@ -66,16 +100,16 @@ const ReportsPage = () => {
     const reportData = {
       earnings: {
         monthlyEarnings: [
-          { month: 'Jan', bookings: providerStats.totalBookings, revenue: providerStats.totalRevenue, commission: providerStats.totalCommission, netEarnings: providerStats.totalRevenue - providerStats.totalCommission },
-          { month: 'Dec', bookings: Math.floor(providerStats.totalBookings * 0.8), revenue: Math.floor(providerStats.totalRevenue * 0.8), commission: Math.floor(providerStats.totalCommission * 0.8), netEarnings: Math.floor((providerStats.totalRevenue - providerStats.totalCommission) * 0.8) }
+          { month: 'Jan', bookings: providerStats.totalBookings || 0, revenue: providerStats.totalRevenue || 0, commission: providerStats.totalCommission || 0, netEarnings: (providerStats.totalRevenue || 0) - (providerStats.totalCommission || 0) },
+          { month: 'Dec', bookings: Math.floor((providerStats.totalBookings || 0) * 0.8), revenue: Math.floor((providerStats.totalRevenue || 0) * 0.8), commission: Math.floor((providerStats.totalCommission || 0) * 0.8), netEarnings: Math.floor(((providerStats.totalRevenue || 0) - (providerStats.totalCommission || 0)) * 0.8) }
         ]
       },
       services: {
-        services: provider?.services.map((serviceId, index) => ({
-          name: `Service ${serviceId}`,
-          bookings: Math.floor(providerStats.totalBookings / provider.services.length),
-          revenue: Math.floor(providerStats.totalRevenue / provider.services.length),
-          rating: provider.rating
+        services: providerStats.services?.map(service => ({
+          name: service.name,
+          bookings: service.totalBookings || 0,
+          revenue: (service.price || 0) * (service.totalBookings || 0),
+          rating: service.ratings || 0
         })) || []
       },
       clients: {
@@ -88,6 +122,22 @@ const ReportsPage = () => {
     
     generateProviderReport(reportType, reportData[reportType] || {});
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-gray-600">Loading reports data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -167,7 +217,7 @@ const ReportsPage = () => {
               <div className="text-sm text-gray-600">Completed Bookings</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{provider?.rating || 0}</div>
+              <div className="text-2xl font-bold text-purple-600">{providerStats.rating || 0}</div>
               <div className="text-sm text-gray-600">Average Rating</div>
             </div>
           </div>

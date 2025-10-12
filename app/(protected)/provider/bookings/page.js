@@ -1,101 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Filter, Calendar, Clock, User, Star, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 const ProviderBookings = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const bookings = [
-    {
-      id: 1,
-      client: "Sarah Mitchell",
-      service: "Hair Styling",
-      date: "2024-01-15",
-      time: "10:00 AM",
-      duration: 90,
-      price: 2500,
-      points: 25,
-      status: "confirmed",
-      rating: 5,
-      phone: "+254 712 345 678"
-    },
-    {
-      id: 2,
-      client: "Jane Doe",
-      service: "Makeup",
-      date: "2024-01-15",
-      time: "2:30 PM",
-      duration: 60,
-      price: 3000,
-      points: 30,
-      status: "pending",
-      rating: null,
-      phone: "+254 723 456 789"
-    },
-    {
-      id: 3,
-      client: "Mary Kamau",
-      service: "Nail Art",
-      date: "2024-01-14",
-      time: "4:00 PM",
-      duration: 120,
-      price: 1800,
-      points: 18,
-      status: "completed",
-      rating: 4,
-      phone: "+254 734 567 890"
-    },
-    {
-      id: 4,
-      client: "Lisa Roberts",
-      service: "Facial Treatment",
-      date: "2024-01-13",
-      time: "11:00 AM",
-      duration: 75,
-      price: 2200,
-      points: 22,
-      status: "cancelled",
-      rating: null,
-      phone: "+254 745 678 901"
-    },
-    {
-      id: 5,
-      client: "Grace Wanjiku",
-      service: "Hair Coloring",
-      date: "2024-01-12",
-      time: "9:00 AM",
-      duration: 180,
-      price: 4500,
-      points: 45,
-      status: "completed",
-      rating: 5,
-      phone: "+254 756 789 012"
-    }
-  ];
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const response = await fetch('/api/bookings');
+        if (!response.ok) throw new Error('Failed to fetch bookings');
+        const data = await response.json();
+        setBookings(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, []);
 
   const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = booking.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.service.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+    const clientName = booking.client?.name || '';
+    const serviceName = booking.service?.name || '';
+    const matchesSearch = clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         serviceName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || booking.status?.toLowerCase() === statusFilter;
     
     let matchesDate = true;
     if (dateFilter === "today") {
-      matchesDate = booking.date === new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      const bookingDate = new Date(booking.bookingDatetime).toISOString().split('T')[0];
+      matchesDate = bookingDate === today;
     } else if (dateFilter === "week") {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      matchesDate = new Date(booking.date) >= weekAgo;
+      matchesDate = new Date(booking.bookingDatetime) >= weekAgo;
     } else if (dateFilter === "month") {
       const monthAgo = new Date();
       monthAgo.setMonth(monthAgo.getMonth() - 1);
-      matchesDate = new Date(booking.date) >= monthAgo;
+      matchesDate = new Date(booking.bookingDatetime) >= monthAgo;
     }
     
     return matchesSearch && matchesStatus && matchesDate;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-gray-600">Loading bookings...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -117,9 +89,23 @@ const ProviderBookings = () => {
     }
   };
 
-  const updateBookingStatus = (id, newStatus) => {
-    // This would typically make an API call
-    console.log(`Updating booking ${id} to ${newStatus}`);
+  const updateBookingStatus = async (id, newStatus) => {
+    try {
+      const response = await fetch(`/api/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!response.ok) throw new Error('Failed to update booking');
+      
+      // Refresh bookings
+      const updatedBookings = bookings.map(booking => 
+        booking.id === id ? { ...booking, status: newStatus } : booking
+      );
+      setBookings(updatedBookings);
+    } catch (err) {
+      alert('Failed to update booking: ' + err.message);
+    }
   };
 
   return (
@@ -211,32 +197,32 @@ const ProviderBookings = () => {
                         <User className="w-4 h-4 text-rose-600" />
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">{booking.client}</div>
-                        <div className="text-sm text-gray-500">{booking.phone}</div>
+                        <div className="font-medium text-gray-900">{booking.client?.name || 'Client'}</div>
+                        <div className="text-sm text-gray-500">{booking.client?.phone || 'No phone'}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-gray-900">{booking.service}</td>
+                  <td className="py-4 px-6 text-gray-900">{booking.service?.name || 'Service'}</td>
                   <td className="py-4 px-6">
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <div>
-                        <div className="text-gray-900">{new Date(booking.date).toLocaleDateString()}</div>
-                        <div className="text-sm text-gray-500">{booking.time}</div>
+                        <div className="text-gray-900">{new Date(booking.bookingDatetime).toLocaleDateString()}</div>
+                        <div className="text-sm text-gray-500">{new Date(booking.bookingDatetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</div>
                       </div>
                     </div>
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center space-x-1">
                       <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-900">{booking.duration} min</span>
+                      <span className="text-gray-900">{booking.service?.duration || 0} min</span>
                     </div>
                   </td>
                   <td className="py-4 px-6 font-semibold text-green-600">
-                    KES {booking.price.toLocaleString()}
+                    KES {parseFloat(booking.amount || 0).toLocaleString()}
                   </td>
                   <td className="py-4 px-6 font-semibold text-gold-dark">
-                    {booking.points} pts
+                    {booking.pointsEarned || 0} pts
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center space-x-2">
@@ -247,10 +233,10 @@ const ProviderBookings = () => {
                     </div>
                   </td>
                   <td className="py-4 px-6">
-                    {booking.rating ? (
+                    {booking.review?.rating ? (
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-gray-900">{booking.rating}</span>
+                        <span className="text-gray-900">{booking.review.rating}</span>
                       </div>
                     ) : (
                       <span className="text-gray-400">-</span>

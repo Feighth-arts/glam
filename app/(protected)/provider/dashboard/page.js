@@ -1,31 +1,60 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Calendar, DollarSign, Users, Star, TrendingUp, Clock, CheckCircle } from "lucide-react";
-import { USERS, getProviderStats } from "@/lib/normalized-data";
 import { useRouter } from "next/navigation";
 
 const ProviderDashboard = () => {
   const router = useRouter();
-  const providerId = "prov_001"; // In real app, get from auth context
-  const provider = USERS.providers.find(p => p.id === providerId);
-  const providerStats = getProviderStats(providerId);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const stats = [
-    { label: "Total Revenue", value: `KES ${providerStats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Bookings Today", value: "3", icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" }, // Mock today's bookings
-    { label: "Total Clients", value: provider?.totalRatings?.toString() || "0", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Avg Rating", value: `${provider?.rating || 0}★`, icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" }
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch('/api/dashboard');
+        if (!response.ok) throw new Error('Failed to fetch dashboard data');
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const handleViewSchedule = () => router.push('/provider/bookings');
   const handleManageClients = () => alert('Client management coming soon!');
   const handleViewReports = () => router.push('/provider/reports');
 
-  const recentBookings = [
-    { client: "Sarah M.", service: "Hair Styling", time: "10:00 AM", status: "confirmed" },
-    { client: "Jane D.", service: "Makeup", time: "2:30 PM", status: "pending" },
-    { client: "Mary K.", service: "Nail Art", time: "4:00 PM", status: "completed" }
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-gray-600">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
+
+  const stats = [
+    { label: "Total Revenue", value: `KES ${(dashboardData?.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Bookings Today", value: dashboardData?.todayBookings?.length || 0, icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Total Bookings", value: dashboardData?.totalBookings || 0, icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Avg Rating", value: `${(dashboardData?.avgRating || 0).toFixed(1)}★`, icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" }
   ];
+
+  const recentBookings = dashboardData?.todayBookings || [];
 
   return (
     <div className="space-y-6">
@@ -65,32 +94,42 @@ const ProviderDashboard = () => {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {recentBookings.map((booking, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              {recentBookings.length > 0 ? recentBookings.map((booking, index) => (
+                <div key={booking.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
-                      <span className="text-rose-600 font-semibold">{booking.client.charAt(0)}</span>
+                      <span className="text-rose-600 font-semibold">{booking.client?.name?.charAt(0) || 'C'}</span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{booking.client}</p>
-                      <p className="text-sm text-gray-500">{booking.service}</p>
+                      <p className="font-medium text-gray-900">{booking.client?.name || 'Client'}</p>
+                      <p className="text-sm text-gray-500">{booking.service?.name || 'Service'}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center text-gray-500">
                       <Clock className="w-4 h-4 mr-1" />
-                      <span className="text-sm">{booking.time}</span>
+                      <span className="text-sm">
+                        {booking.bookingDatetime ? new Date(booking.bookingDatetime).toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit', 
+                          hour12: true 
+                        }) : 'Time TBD'}
+                      </span>
                     </div>
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                      booking.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                      booking.status === 'CONFIRMED' || booking.status === 'PAID' ? 'bg-blue-100 text-blue-800' :
                       'bg-yellow-100 text-yellow-800'
                     }`}>
-                      {booking.status}
+                      {booking.status?.toLowerCase() || 'pending'}
                     </span>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-8 text-gray-500">
+                  No bookings for today
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -125,21 +164,21 @@ const ProviderDashboard = () => {
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-rose-primary">{providerStats.completedBookings}</div>
-              <div className="text-sm text-gray-600">Bookings Completed</div>
+              <div className="text-2xl font-bold text-rose-primary">{dashboardData?.totalBookings || 0}</div>
+              <div className="text-sm text-gray-600">Total Bookings</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">KES {Math.round(providerStats.totalRevenue * 0.3).toLocaleString()}</div>
+              <div className="text-2xl font-bold text-green-600">KES {(dashboardData?.weeklyRevenue || 0).toLocaleString()}</div>
               <div className="text-sm text-gray-600">Weekly Revenue</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">8</div>
-              <div className="text-sm text-gray-600">New Clients</div>
+              <div className="text-2xl font-bold text-blue-600">{dashboardData?.weeklyBookings || 0}</div>
+              <div className="text-sm text-gray-600">Weekly Bookings</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{provider?.rating || 0}★</div>
+              <div className="text-2xl font-bold text-yellow-600">{(dashboardData?.avgRating || 0).toFixed(1)}★</div>
               <div className="text-sm text-gray-600">Average Rating</div>
-              <div className="text-xs text-gray-500 mt-1">(from {provider?.totalRatings || 0} reviews)</div>
+              <div className="text-xs text-gray-500 mt-1">(from {dashboardData?.totalReviews || 0} reviews)</div>
             </div>
           </div>
         </div>

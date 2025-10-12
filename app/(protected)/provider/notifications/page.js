@@ -1,67 +1,112 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, Check, X, Calendar, User, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, Check, X, Calendar, User, Star, DollarSign } from "lucide-react";
 
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: "booking",
-      title: "New Booking Request",
-      message: "Sarah M. has requested a Hair Styling appointment for tomorrow at 2:00 PM",
-      time: "5 minutes ago",
-      read: false,
-      icon: Calendar
-    },
-    {
-      id: 2,
-      type: "review",
-      title: "New Review Received",
-      message: "Jane D. left a 5-star review for your Makeup service",
-      time: "1 hour ago",
-      read: false,
-      icon: Star
-    },
-    {
-      id: 3,
-      type: "client",
-      title: "Client Update",
-      message: "Mary K. has updated her profile information",
-      time: "2 hours ago",
-      read: true,
-      icon: User
-    },
-    {
-      id: 4,
-      type: "booking",
-      title: "Booking Confirmed",
-      message: "Your appointment with Lisa R. for Nail Art has been confirmed",
-      time: "3 hours ago",
-      read: true,
-      icon: Calendar
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications');
+      if (!response.ok) throw new Error('Failed to fetch notifications');
+      const data = await response.json();
+      setNotifications(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const markAsRead = (id) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
+  const markAsRead = async (id) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markAsRead', notificationId: id })
+      });
+      
+      if (!response.ok) throw new Error('Failed to mark as read');
+      
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === id ? { ...notif, read: true } : notif
+        )
+      );
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+    }
   };
 
-  const deleteNotification = (id) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markAllAsRead' })
+      });
+      
+      if (!response.ok) throw new Error('Failed to mark all as read');
+      
+      setNotifications(prev => 
+        prev.map(notif => ({ ...notif, read: true }))
+      );
+    } catch (err) {
+      console.error('Error marking all notifications as read:', err);
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: id })
+      });
+      
+      if (!response.ok) throw new Error('Failed to delete notification');
+      
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+    }
+  };
+
+  const getIconComponent = (iconName) => {
+    const iconMap = {
+      Calendar,
+      Star,
+      User,
+      DollarSign,
+      Bell
+    };
+    return iconMap[iconName] || Bell;
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-gray-600">Loading notifications...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -93,7 +138,7 @@ const NotificationsPage = () => {
             </div>
           ) : (
             notifications.map((notification) => {
-              const Icon = notification.icon;
+              const Icon = getIconComponent(notification.icon);
               return (
                 <div 
                   key={notification.id}
