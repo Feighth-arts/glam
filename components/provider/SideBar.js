@@ -16,6 +16,7 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -28,6 +29,21 @@ const Sidebar = () => {
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/users/profile');
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+    fetchUser();
   }, []);
 
   const pathname = usePathname();
@@ -133,7 +149,7 @@ const Sidebar = () => {
                 </div>
                 
                 <div className="flex flex-col min-w-0">
-                  <h1 className="font-bold text-sm truncate">Faith Chepkemoi</h1>
+                  <h1 className="font-bold text-sm truncate">{user?.name || 'Loading...'}</h1>
                   <p className="text-xs text-rose-200">Provider</p>
                 </div>
               </div>

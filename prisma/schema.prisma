@@ -17,6 +17,11 @@ model User {
   role      Role     @default(CLIENT)
   status    UserStatus @default(ACTIVE)
   location  String?
+  experience String?
+  license   String?
+  specialty String?
+  workingDays Json?
+  workingHours Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

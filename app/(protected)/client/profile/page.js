@@ -1,18 +1,42 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Gift, Star, Edit3 } from 'lucide-react';
-import { CLIENT_DATA, POINTS_CONFIG } from '@/lib/constants';
 
 export default function ClientProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    name: CLIENT_DATA?.profile?.name || '',
-    email: CLIENT_DATA?.profile?.email || '',
-    phone: CLIENT_DATA?.profile?.phone || '',
-    location: CLIENT_DATA?.profile?.location || '',
-    birthday: CLIENT_DATA?.profile?.birthday || ''
+    name: '',
+    email: '',
+    phone: '',
+    location: ''
   });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch('/api/users/profile');
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+        setFormData({
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          location: data.location || ''
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -22,29 +46,39 @@ export default function ClientProfilePage() {
     }));
   };
 
-  const handleSave = () => {
-    console.log('Saving profile:', formData);
-    setIsEditing(false);
-    // Backend integration point
+  const handleSave = async () => {
+    try {
+      const res = await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        await fetchProfile();
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    }
   };
 
   const getTierInfo = () => {
-    const currentPoints = CLIENT_DATA?.stats?.pointsEarned || 0;
-    const tier = CLIENT_DATA?.profile?.tier || 'Bronze';
+    const currentPoints = profile?.userPoints?.currentPoints || 0;
+    const tier = profile?.userPoints?.tier || 'BRONZE';
     
-    if (tier === 'Bronze') {
+    if (tier === 'BRONZE') {
       return {
         current: tier,
-        next: 'Gold',
-        pointsNeeded: POINTS_CONFIG.tiers.gold.min - currentPoints,
-        progress: (currentPoints / POINTS_CONFIG.tiers.gold.min) * 100
+        next: 'GOLD',
+        pointsNeeded: 1000 - currentPoints,
+        progress: (currentPoints / 1000) * 100
       };
-    } else if (tier === 'Gold') {
+    } else if (tier === 'GOLD') {
       return {
         current: tier,
-        next: 'Platinum',
-        pointsNeeded: POINTS_CONFIG.tiers.platinum.min - currentPoints,
-        progress: ((currentPoints - POINTS_CONFIG.tiers.gold.min) / (POINTS_CONFIG.tiers.platinum.min - POINTS_CONFIG.tiers.gold.min)) * 100
+        next: 'PLATINUM',
+        pointsNeeded: 5000 - currentPoints,
+        progress: ((currentPoints - 1000) / 4000) * 100
       };
     }
     return {
@@ -54,6 +88,9 @@ export default function ClientProfilePage() {
       progress: 100
     };
   };
+
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
+  if (!profile) return <div className="flex justify-center items-center h-64">Failed to load profile</div>;
 
   const tierInfo = getTierInfo();
 
@@ -82,10 +119,10 @@ export default function ClientProfilePage() {
                 <User className="w-10 h-10 text-rose-600" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">{CLIENT_DATA?.profile?.name}</h3>
-                <p className="text-gray-600">{CLIENT_DATA?.profile?.tier} Member</p>
+                <h3 className="text-xl font-semibold text-gray-900">{profile.name}</h3>
+                <p className="text-gray-600">{profile.userPoints?.tier || 'BRONZE'} Member</p>
                 <p className="text-sm text-gray-500">
-                  Member since {new Date(CLIENT_DATA?.profile?.memberSince || '').toLocaleDateString()}
+                  Member since {new Date(profile.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -106,7 +143,7 @@ export default function ClientProfilePage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-primary focus:border-transparent"
                     />
                   ) : (
-                    <p className="text-gray-900">{CLIENT_DATA?.profile?.email}</p>
+                    <p className="text-gray-900">{profile.email}</p>
                   )}
                 </div>
 
@@ -124,7 +161,7 @@ export default function ClientProfilePage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-primary focus:border-transparent"
                     />
                   ) : (
-                    <p className="text-gray-900">{CLIENT_DATA?.profile?.phone}</p>
+                    <p className="text-gray-900">{profile.phone || 'Not set'}</p>
                   )}
                 </div>
               </div>
@@ -144,7 +181,7 @@ export default function ClientProfilePage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-primary focus:border-transparent"
                     />
                   ) : (
-                    <p className="text-gray-900">{CLIENT_DATA?.profile?.location}</p>
+                    <p className="text-gray-900">{profile.location || 'Not set'}</p>
                   )}
                 </div>
 
@@ -162,9 +199,7 @@ export default function ClientProfilePage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-primary focus:border-transparent"
                     />
                   ) : (
-                    <p className="text-gray-900">
-                      {CLIENT_DATA?.profile?.birthday ? new Date(CLIENT_DATA.profile.birthday).toLocaleDateString() : 'Not set'}
-                    </p>
+                    <p className="text-gray-900">Not set</p>
                   )}
                 </div>
               </div>
@@ -224,19 +259,15 @@ export default function ClientProfilePage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Total Bookings</span>
-                <span className="font-semibold text-gray-900">{CLIENT_DATA?.stats?.totalBookings || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Total Spent</span>
-                <span className="font-semibold text-gray-900">KES {(CLIENT_DATA?.stats?.totalSpent || 0).toLocaleString()}</span>
+                <span className="font-semibold text-gray-900">{profile._count?.clientBookings || 0}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Points Balance</span>
-                <span className="font-semibold text-rose-primary">{CLIENT_DATA?.stats?.pointsEarned || 0}</span>
+                <span className="font-semibold text-rose-primary">{profile.userPoints?.currentPoints || 0}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Favorite Service</span>
-                <span className="font-semibold text-gray-900">{CLIENT_DATA?.stats?.favoriteService || 'None'}</span>
+                <span className="text-gray-600">Lifetime Points</span>
+                <span className="font-semibold text-gray-900">{profile.userPoints?.lifetimePoints || 0}</span>
               </div>
             </div>
           </div>
