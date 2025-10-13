@@ -21,9 +21,10 @@ const ProviderBookings = () => {
         });
         if (!response.ok) throw new Error('Failed to fetch bookings');
         const data = await response.json();
-        setBookings(data);
+        setBookings(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err.message);
+        setBookings([]);
       } finally {
         setLoading(false);
       }
@@ -95,9 +96,11 @@ const ProviderBookings = () => {
 
   const updateBookingStatus = async (id, newStatus) => {
     try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
       const response = await fetch(`/api/bookings/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
         body: JSON.stringify({ status: newStatus })
       });
       if (!response.ok) throw new Error('Failed to update booking');
@@ -109,6 +112,32 @@ const ProviderBookings = () => {
       setBookings(updatedBookings);
     } catch (err) {
       alert('Failed to update booking: ' + err.message);
+    }
+  };
+
+  const verifyPayment = async (booking) => {
+    if (!confirm('Confirm you received M-Pesa payment from client?')) return;
+    
+    try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      
+      // Provider confirms payment received - update booking to PAID
+      const response = await fetch(`/api/bookings/${booking.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
+        body: JSON.stringify({ status: 'PAID' })
+      });
+      
+      if (!response.ok) throw new Error('Failed to verify payment');
+      
+      const updatedBookings = bookings.map(b => 
+        b.id === booking.id ? { ...b, status: 'PAID' } : b
+      );
+      setBookings(updatedBookings);
+      alert('Payment verified! You can now confirm the booking.');
+    } catch (err) {
+      alert('Failed to verify payment: ' + err.message);
     }
   };
 
@@ -177,7 +206,7 @@ const ProviderBookings = () => {
 
       {/* Bookings Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-w-full">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -247,29 +276,40 @@ const ProviderBookings = () => {
                     )}
                   </td>
                   <td className="py-4 px-6">
-                    {booking.status === 'pending' && (
+                    {booking.status === 'PENDING_PAYMENT' && (
+                      <button
+                        onClick={() => verifyPayment(booking)}
+                        className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+                      >
+                        Verify Payment
+                      </button>
+                    )}
+                    {booking.status === 'PAID' && (
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => updateBookingStatus(booking.id, 'confirmed')}
+                          onClick={() => updateBookingStatus(booking.id, 'CONFIRMED')}
                           className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
                         >
                           Confirm
                         </button>
                         <button
-                          onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                          onClick={() => updateBookingStatus(booking.id, 'CANCELLED')}
                           className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
                         >
                           Cancel
                         </button>
                       </div>
                     )}
-                    {booking.status === 'confirmed' && (
+                    {booking.status === 'CONFIRMED' && (
                       <button
-                        onClick={() => updateBookingStatus(booking.id, 'completed')}
+                        onClick={() => updateBookingStatus(booking.id, 'COMPLETED')}
                         className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
                       >
                         Complete
                       </button>
+                    )}
+                    {(booking.status === 'COMPLETED' || booking.status === 'CANCELLED') && (
+                      <span className="text-xs text-gray-500">-</span>
                     )}
                   </td>
                 </tr>
