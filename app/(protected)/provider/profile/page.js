@@ -186,13 +186,11 @@ function UpdateProfileForm({ profile, onClose, onUpdate }) {
     setIsSubmitting(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log("Updated Profile:", formData);
-      onUpdate(formData);
+      await onUpdate(formData);
       onClose();
     } catch (error) {
       console.error("Error updating profile:", error);
+      alert('Failed to update profile. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

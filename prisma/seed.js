@@ -1,8 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
+
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
   // Create service categories
   const categories = await Promise.all([
@@ -87,6 +90,7 @@ async function main() {
     create: {
       id: 'admin_001',
       email: 'admin@glamease.com',
+      password: hashedPassword,
       name: 'Admin User',
       phone: '+254700000001',
       role: 'ADMIN',
@@ -100,6 +104,7 @@ async function main() {
     create: {
       id: 'prov_001',
       email: 'sarah.johnson@beautystudio.com',
+      password: hashedPassword,
       name: 'Sarah Johnson',
       phone: '+254712345678',
       role: 'PROVIDER',
@@ -113,6 +118,7 @@ async function main() {
     create: {
       id: 'prov_002',
       email: 'mary.wanjiku@glamourpalace.com',
+      password: hashedPassword,
       name: 'Mary Wanjiku',
       phone: '+254723456789',
       role: 'PROVIDER',
@@ -126,6 +132,7 @@ async function main() {
     create: {
       id: 'client_001',
       email: 'faith.kiplangat@email.com',
+      password: hashedPassword,
       name: 'Faith Kiplangat',
       phone: '+254734567890',
       role: 'CLIENT',
@@ -139,6 +146,7 @@ async function main() {
     create: {
       id: 'client_002',
       email: 'grace.mwangi@email.com',
+      password: hashedPassword,
       name: 'Grace Mwangi',
       phone: '+254745678901',
       role: 'CLIENT',

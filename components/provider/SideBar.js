@@ -10,6 +10,7 @@ import { CgProfile } from "react-icons/cg";
 import { IoMdNotifications, IoMdClose, IoMdMenu } from "react-icons/io";
 import { TbReportAnalytics } from "react-icons/tb";
 import { MdHelpOutline, MdLogout, MdSpa, MdAttachMoney } from "react-icons/md";
+import { logout } from '@/lib/auth-helper';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -218,6 +219,7 @@ const Sidebar = () => {
             </button>
 
             <button 
+              onClick={logout}
               className={`
                 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative
                 bg-white text-rose-primary hover:bg-rose-50
