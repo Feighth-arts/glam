@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { RiDashboard2Fill, RiMenuFoldLine, RiMenuUnfoldLine } from "react-icons/ri";
 import { FaUsers, FaBookBookmark } from "react-icons/fa6";
 import { IoMdNotifications, IoMdClose, IoMdMenu, IoMdSettings } from "react-icons/io";
@@ -14,6 +14,12 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('userId');
+    router.push('/login');
+  };
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -218,6 +224,7 @@ const Sidebar = () => {
             </button>
 
             <button 
+              onClick={handleLogout}
               className={`
                 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative
                 bg-white text-rose-primary hover:bg-rose-50
