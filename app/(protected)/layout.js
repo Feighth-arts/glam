@@ -9,20 +9,14 @@ export default function ProtectedLayout({ children }) {
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
-    if (!userId) {
+    const userRole = localStorage.getItem('userRole');
+    
+    if (!userId || !userRole) {
       router.push('/login');
       return;
     }
 
-    // Check role-based access
-    const role = userId.startsWith('admin') ? 'admin' : 
-                 userId.startsWith('prov') ? 'provider' : 
-                 userId.startsWith('client') ? 'client' : null;
-
-    if (!role) {
-      router.push('/login');
-      return;
-    }
+    const role = userRole.toLowerCase();
 
     // Redirect if accessing wrong dashboard
     if (pathname.startsWith('/admin') && role !== 'admin') {

@@ -37,6 +37,7 @@ export default function SignupPage() {
       }
 
       localStorage.setItem('userId', data.id);
+      localStorage.setItem('userRole', data.role);
       
       const roleMap = {
         'ADMIN': '/admin/dashboard',

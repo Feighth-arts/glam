@@ -100,12 +100,12 @@ async function main() {
 
   const provider1 = await prisma.user.upsert({
     where: { id: 'prov_001' },
-    update: {},
+    update: { name: 'Mercy Johnson' },
     create: {
       id: 'prov_001',
-      email: 'sarah.johnson@beautystudio.com',
+      email: 'mercy.johnson@beautystudio.com',
       password: hashedPassword,
-      name: 'Sarah Johnson',
+      name: 'Mercy Johnson',
       phone: '+254712345678',
       role: 'PROVIDER',
       location: 'Westlands, Nairobi'

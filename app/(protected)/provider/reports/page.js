@@ -16,10 +16,13 @@ const ReportsPage = () => {
 
   const fetchProviderStats = async () => {
     try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      const headers = { 'x-user-id': userId, 'x-user-role': userRole };
       const [dashboardResponse, profileResponse, servicesResponse] = await Promise.all([
-        fetch('/api/dashboard'),
-        fetch('/api/users/profile'),
-        fetch('/api/provider/services')
+        fetch('/api/dashboard', { headers }),
+        fetch('/api/users/profile', { headers }),
+        fetch('/api/provider/services', { headers })
       ]);
       
       if (!dashboardResponse.ok || !profileResponse.ok || !servicesResponse.ok) {

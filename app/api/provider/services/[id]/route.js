@@ -4,8 +4,8 @@ import { getUserId, getUserRole } from '@/lib/auth-helper';
 
 export async function PUT(request, { params }) {
   try {
-    const userId = getUserId();
-    const userRole = getUserRole();
+    const userId = getUserId(request);
+    const userRole = getUserRole(request);
     if (!userId || userRole !== 'PROVIDER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -23,6 +23,7 @@ export async function PUT(request, { params }) {
       },
       data: {
         customPrice: parseFloat(price),
+        customPoints: points ? parseInt(points) : null,
         availability: availability || { days: [], timeSlots: [] }
       },
       include: {
@@ -61,7 +62,7 @@ export async function PUT(request, { params }) {
       id: providerService.service.id,
       name: providerService.service.name,
       price: providerService.customPrice || providerService.service.basePrice,
-      points: providerService.service.points,
+      points: providerService.customPoints || providerService.service.points,
       duration: providerService.service.duration,
       ratings: providerService.service.reviews.length > 0 
         ? providerService.service.reviews.reduce((sum, r) => sum + r.rating, 0) / providerService.service.reviews.length 
@@ -79,8 +80,8 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const userId = getUserId();
-    const userRole = getUserRole();
+    const userId = getUserId(request);
+    const userRole = getUserRole(request);
     if (!userId || userRole !== 'PROVIDER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

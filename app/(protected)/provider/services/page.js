@@ -14,7 +14,11 @@ export default function ServicesPage() {
   useEffect(() => {
     const fetchProviderServices = async () => {
       try {
-        const response = await fetch('/api/provider/services');
+        const userId = localStorage.getItem('userId');
+        const userRole = localStorage.getItem('userRole');
+        const response = await fetch('/api/provider/services', {
+          headers: { 'x-user-id': userId, 'x-user-role': userRole }
+        });
         if (!response.ok) throw new Error('Failed to fetch services');
         const data = await response.json();
         setServices(data);
@@ -70,9 +74,11 @@ export default function ServicesPage() {
     }
 
     try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
       const response = await fetch('/api/provider/services', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
         body: JSON.stringify(newService)
       });
       
@@ -93,15 +99,17 @@ export default function ServicesPage() {
       price: service.price,
       points: service.points,
       duration: service.duration,
-      availability: service.availability
+      availability: service.availability || { days: [], timeSlots: [] }
     });
   };
 
   const handleSaveEdit = async (id) => {
     try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
       const response = await fetch(`/api/provider/services/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
         body: JSON.stringify(newService)
       });
       
@@ -156,8 +164,11 @@ export default function ServicesPage() {
     if (!confirm('Are you sure you want to delete this service?')) return;
     
     try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
       const response = await fetch(`/api/provider/services/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'x-user-id': userId, 'x-user-role': userRole }
       });
       
       if (!response.ok) throw new Error('Failed to delete service');
@@ -168,9 +179,7 @@ export default function ServicesPage() {
     }
   };
 
-  const ServiceCard = ({ service }) => {
-    const isEditing = editingId === service.id;
-
+  const ServiceCard = ({ service, isEditing, editData, onEditDataChange }) => {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
         <div className="flex justify-between items-start">
@@ -178,8 +187,8 @@ export default function ServicesPage() {
             {isEditing ? (
               <input
                 type="text"
-                value={newService.name}
-                onChange={(e) => setNewService(prev => ({ ...prev, name: e.target.value }))}
+                value={editData.name}
+                onChange={(e) => onEditDataChange({ ...editData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
                 placeholder="Service name"
               />
@@ -254,8 +263,8 @@ export default function ServicesPage() {
             {isEditing ? (
               <input
                 type="number"
-                value={newService.price}
-                onChange={(e) => setNewService(prev => ({ ...prev, price: e.target.value }))}
+                value={editData.price}
+                onChange={(e) => onEditDataChange({ ...editData, price: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
                 placeholder="Price"
               />
@@ -271,8 +280,8 @@ export default function ServicesPage() {
             {isEditing ? (
               <input
                 type="number"
-                value={newService.points}
-                onChange={(e) => setNewService(prev => ({ ...prev, points: e.target.value }))}
+                value={editData.points}
+                onChange={(e) => onEditDataChange({ ...editData, points: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
                 placeholder="Points"
               />
@@ -288,8 +297,8 @@ export default function ServicesPage() {
             {isEditing ? (
               <input
                 type="number"
-                value={newService.duration}
-                onChange={(e) => setNewService(prev => ({ ...prev, duration: e.target.value }))}
+                value={editData.duration}
+                onChange={(e) => onEditDataChange({ ...editData, duration: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
                 placeholder="Minutes"
               />
@@ -501,7 +510,13 @@ export default function ServicesPage() {
         )}
 
         {services.map(service => (
-          <ServiceCard key={service.id} service={service} />
+          <ServiceCard 
+            key={service.id} 
+            service={service} 
+            isEditing={editingId === service.id}
+            editData={newService}
+            onEditDataChange={setNewService}
+          />
         ))}
       </div>
     </div>

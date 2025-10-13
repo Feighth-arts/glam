@@ -14,7 +14,11 @@ const NotificationsPage = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch('/api/notifications');
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      const response = await fetch('/api/notifications', {
+        headers: { 'x-user-id': userId, 'x-user-role': userRole }
+      });
       if (!response.ok) throw new Error('Failed to fetch notifications');
       const data = await response.json();
       setNotifications(data);

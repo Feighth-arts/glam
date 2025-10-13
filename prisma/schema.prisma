@@ -71,9 +71,10 @@ model Service {
 }
 
 model ProviderService {
-  providerId  String
-  serviceId   Int
-  customPrice Decimal? @db.Decimal(10, 2)
+  providerId   String
+  serviceId    Int
+  customPrice  Decimal? @db.Decimal(10, 2)
+  customPoints Int?
   availability Json?
 
   provider User    @relation(fields: [providerId], references: [id], onDelete: Cascade)

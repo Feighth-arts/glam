@@ -13,7 +13,11 @@ const ProviderDashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/dashboard');
+        const userId = localStorage.getItem('userId');
+        const userRole = localStorage.getItem('userRole');
+        const response = await fetch('/api/dashboard', {
+          headers: { 'x-user-id': userId, 'x-user-role': userRole }
+        });
         if (!response.ok) throw new Error('Failed to fetch dashboard data');
         const data = await response.json();
         setDashboardData(data);

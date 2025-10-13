@@ -2,9 +2,9 @@ import { prisma } from '@/lib/prisma';
 import { getUserId, getUserRole } from '@/lib/auth-helper';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const userId = getUserId();
+    const userId = getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -96,7 +96,7 @@ export async function GET() {
 
 export async function PUT(request) {
   try {
-    const userId = getUserId();
+    const userId = getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

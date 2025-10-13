@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserId } from '@/lib/auth-helper';
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const userId = getUserId();
+    const userId = getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -34,7 +34,7 @@ export async function GET() {
 
 export async function PATCH(request) {
   try {
-    const userId = getUserId();
+    const userId = getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -68,7 +68,7 @@ export async function PATCH(request) {
 
 export async function DELETE(request) {
   try {
-    const userId = getUserId();
+    const userId = getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

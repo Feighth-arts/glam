@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
-    const userId = getUserId();
-    const userRole = getUserRole();
+    const userId = getUserId(request);
+    const userRole = getUserRole(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -56,8 +56,8 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const userId = getUserId();
-    const userRole = getUserRole();
+    const userId = getUserId(request);
+    const userRole = getUserRole(request);
     if (!userId || userRole !== 'CLIENT') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

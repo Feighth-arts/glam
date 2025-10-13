@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Gift, Calendar } from 'lucide-react';
-import { SERVICE_CATALOG, USERS } from '@/lib/normalized-data';
 import { useRouter } from 'next/navigation';
 
 export default function ClientServicesPage() {
@@ -10,22 +9,25 @@ export default function ClientServicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
+  const [providers, setProviders] = useState([]);
+  const [categories, setCategories] = useState(['all']);
+  const [loading, setLoading] = useState(true);
+  const [bookingModal, setBookingModal] = useState(null);
 
-  const providers = USERS.providers.map(provider => ({
-    ...provider,
-    services: provider.services.map(serviceId => {
-      const service = SERVICE_CATALOG.find(s => s.id === serviceId);
-      return {
-        ...service,
-        price: service?.basePrice,
-        ratings: provider.rating
-      };
-    }).filter(Boolean),
-    reviews: provider.totalRatings,
-    distance: "2.1 km" // Mock distance
-  }));
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    const headers = { 'x-user-id': userId, 'x-user-role': userRole };
+    fetch('/api/client/services', { headers }).then(r => r.json()).then(data => {
+      setProviders(data);
+      const allCategories = new Set();
+      data.forEach(p => p.services.forEach(s => s.category && allCategories.add(s.category)));
+      setCategories(['all', ...Array.from(allCategories)]);
+      setLoading(false);
+    });
+  }, []);
 
-  const categories = ['all', ...new Set(SERVICE_CATALOG.map(s => s.category))];
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 
   const filteredProviders = providers.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,8 +44,7 @@ export default function ClientServicesPage() {
   });
 
   const handleBookService = (provider, service) => {
-    // In real app, this would open booking modal or navigate to booking flow
-    alert(`Booking ${service.name} with ${provider.name}. Booking system coming soon!`);
+    setBookingModal({ provider, service });
   };
 
   const handleViewProfile = (providerId) => {
@@ -188,6 +189,191 @@ export default function ClientServicesPage() {
           <p className="text-gray-500">Try adjusting your search or filters</p>
         </div>
       )}
+
+      {/* Booking Modal */}
+      {bookingModal && (
+        <BookingModal
+          provider={bookingModal.provider}
+          service={bookingModal.service}
+          onClose={() => setBookingModal(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function BookingModal({ provider, service, onClose }) {
+  const [formData, setFormData] = useState({
+    date: '',
+    time: '',
+    location: '',
+    notes: '',
+    pointsToRedeem: 0,
+    phoneNumber: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [userPoints, setUserPoints] = useState(0);
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    const headers = { 'x-user-id': userId, 'x-user-role': userRole };
+    fetch('/api/users/profile', { headers })
+      .then(res => res.json())
+      .then(data => setUserPoints(data.userPoints?.currentPoints || 0));
+  }, []);
+
+  const maxDiscount = service.price * 0.30;
+  const maxPoints = Math.min(userPoints, maxDiscount);
+  const finalPrice = service.price - Math.min(formData.pointsToRedeem, maxDiscount);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      const res = await fetch('/api/bookings/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
+        body: JSON.stringify({
+          providerId: provider.id,
+          serviceId: service.id,
+          bookingDatetime: `${formData.date}T${formData.time}`,
+          location: formData.location,
+          notes: formData.notes,
+          pointsToRedeem: formData.pointsToRedeem,
+          phoneNumber: formData.phoneNumber
+        })
+      });
+
+      if (res.ok) {
+        const { payment } = await res.json();
+        // Initiate M-Pesa
+        await fetch('/api/payments/mpesa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentId: payment.id,
+            phoneNumber: formData.phoneNumber,
+            amount: finalPrice
+          })
+        });
+        alert('Booking created! Check your phone for M-Pesa prompt.');
+        onClose();
+      }
+    } catch (error) {
+      alert('Booking failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4">Book {service.name}</h2>
+        <p className="text-gray-600 mb-4">with {provider.name}</p>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Date</label>
+            <input
+              type="date"
+              required
+              value={formData.date}
+              onChange={(e) => setFormData({...formData, date: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Time</label>
+            <input
+              type="time"
+              required
+              value={formData.time}
+              onChange={(e) => setFormData({...formData, time: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Phone Number (M-Pesa)</label>
+            <input
+              type="tel"
+              required
+              placeholder="254712345678"
+              value={formData.phoneNumber}
+              onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Location</label>
+            <input
+              type="text"
+              value={formData.location}
+              onChange={(e) => setFormData({...formData, location: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg"
+              rows="2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Redeem Points (Max {maxPoints} pts = 30% discount)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max={maxPoints}
+              value={formData.pointsToRedeem}
+              onChange={(e) => setFormData({...formData, pointsToRedeem: parseInt(e.target.value) || 0})}
+              className="w-full px-3 py-2 border rounded-lg"
+            />
+            <p className="text-sm text-gray-600 mt-1">You have {userPoints} points</p>
+          </div>
+          <div className="border-t pt-4">
+            <div className="flex justify-between mb-2">
+              <span>Original Price:</span>
+              <span>KES {service.price}</span>
+            </div>
+            {formData.pointsToRedeem > 0 && (
+              <div className="flex justify-between mb-2 text-green-600">
+                <span>Points Discount:</span>
+                <span>-KES {Math.min(formData.pointsToRedeem, maxDiscount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-lg">
+              <span>Total:</span>
+              <span>KES {finalPrice}</span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-rose-primary text-white rounded-lg disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Confirm Booking'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

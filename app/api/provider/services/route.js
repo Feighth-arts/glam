@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserId, getUserRole } from '@/lib/auth-helper';
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const userId = getUserId();
-    const userRole = getUserRole();
+    const userId = getUserId(request);
+    const userRole = getUserRole(request);
     if (!userId || userRole !== 'PROVIDER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -36,7 +36,7 @@ export async function GET() {
       id: ps.service.id,
       name: ps.service.name,
       price: ps.customPrice || ps.service.basePrice,
-      points: ps.service.points,
+      points: ps.customPoints || ps.service.points,
       duration: ps.service.duration,
       ratings: ps.service.reviews.length > 0 
         ? ps.service.reviews.reduce((sum, r) => sum + r.rating, 0) / ps.service.reviews.length 
@@ -59,8 +59,8 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const userId = getUserId();
-    const userRole = getUserRole();
+    const userId = getUserId(request);
+    const userRole = getUserRole(request);
     if (!userId || userRole !== 'PROVIDER') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -74,6 +74,7 @@ export async function POST(request) {
           providerId: userId,
           serviceId: parseInt(serviceId),
           customPrice: parseFloat(price),
+          customPoints: points ? parseInt(points) : null,
           availability: availability || { days: [], timeSlots: [] }
         },
         include: {
@@ -89,7 +90,7 @@ export async function POST(request) {
         id: providerService.service.id,
         name: providerService.service.name,
         price: providerService.customPrice || providerService.service.basePrice,
-        points: providerService.service.points,
+        points: providerService.customPoints || providerService.service.points,
         duration: providerService.service.duration,
         ratings: 0,
         totalRatings: 0,
@@ -116,6 +117,7 @@ export async function POST(request) {
           providerId: userId,
           serviceId: service.id,
           customPrice: parseFloat(price),
+          customPoints: parseInt(points),
           availability: availability || { days: [], timeSlots: [] }
         }
       });

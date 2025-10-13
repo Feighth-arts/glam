@@ -34,7 +34,11 @@ const Sidebar = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/users/profile');
+        const userId = localStorage.getItem('userId');
+        const userRole = localStorage.getItem('userRole');
+        const res = await fetch('/api/users/profile', {
+          headers: { 'x-user-id': userId, 'x-user-role': userRole }
+        });
         if (res.ok) {
           const data = await res.json();
           setUser(data);

@@ -541,7 +541,11 @@ export default function ProviderProfile({ profile: initialProfile = {} }) {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/users/profile');
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      const response = await fetch('/api/users/profile', {
+        headers: { 'x-user-id': userId, 'x-user-role': userRole }
+      });
       if (!response.ok) throw new Error('Failed to fetch profile');
       const data = await response.json();
       
@@ -582,9 +586,11 @@ export default function ProviderProfile({ profile: initialProfile = {} }) {
 
   const handleProfileUpdate = async (updatedData) => {
     try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
       const response = await fetch('/api/users/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
         body: JSON.stringify(updatedData)
       });
       
