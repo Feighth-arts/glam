@@ -1,14 +1,28 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Search, Filter, Eye, DollarSign, Clock, MapPin } from 'lucide-react';
-import { NORMALIZED_BOOKINGS } from '@/lib/admin-constants';
 
 export default function AdminBookingsPage() {
-  const [bookings] = useState(NORMALIZED_BOOKINGS);
+  const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [viewingBooking, setViewingBooking] = useState(null);
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch('/api/admin/bookings', {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
+      setBookings(Array.isArray(data) ? data : []);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = booking.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,8 +52,10 @@ export default function AdminBookingsPage() {
   };
 
   const handleBookingAction = (action, bookingId) => {
-    console.log(`${action} booking:`, bookingId);
-    // Backend integration point
+    if (action === 'view') {
+      const booking = bookings.find(b => b.id === bookingId);
+      setViewingBooking(booking);
+    }
   };
 
   const totalRevenue = filteredBookings.reduce((sum, booking) => sum + booking.price, 0);
@@ -238,6 +254,88 @@ export default function AdminBookingsPage() {
           </div>
         )}
       </div>
+
+      {/* View Booking Modal */}
+      {viewingBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-xl font-bold">Booking Details</h2>
+              <button onClick={() => setViewingBooking(null)} className="text-gray-400 hover:text-gray-600">
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-600">Booking ID</label>
+                  <p className="font-medium">#{viewingBooking.id}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Status</label>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viewingBooking.status)}`}>
+                    {viewingBooking.status}
+                  </span>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Client</label>
+                  <p className="font-medium">{viewingBooking.clientName}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Provider</label>
+                  <p className="font-medium">{viewingBooking.providerName}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Service</label>
+                  <p className="font-medium">{viewingBooking.service}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Location</label>
+                  <p className="font-medium">{viewingBooking.location}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Date</label>
+                  <p className="font-medium">{viewingBooking.date}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Time</label>
+                  <p className="font-medium">{viewingBooking.time}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                <div>
+                  <label className="text-sm text-gray-600">Total Amount</label>
+                  <p className="font-medium text-lg">KES {viewingBooking.price.toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Commission</label>
+                  <p className="font-medium text-lg">KES {viewingBooking.commission.toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Provider Earning</label>
+                  <p className="font-medium text-lg">KES {viewingBooking.providerEarning.toLocaleString()}</p>
+                </div>
+              </div>
+              <div className="pt-4 border-t">
+                <label className="text-sm text-gray-600">Payment Status</label>
+                <p className="font-medium">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(viewingBooking.paymentStatus)}`}>
+                    {viewingBooking.paymentStatus}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setViewingBooking(null)}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

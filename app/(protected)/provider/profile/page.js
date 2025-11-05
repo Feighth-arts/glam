@@ -537,6 +537,7 @@ export default function ProviderProfile({ profile: initialProfile = {} }) {
 
   useEffect(() => {
     fetchProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {

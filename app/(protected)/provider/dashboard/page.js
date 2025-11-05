@@ -32,8 +32,8 @@ const ProviderDashboard = () => {
   }, []);
 
   const handleViewSchedule = () => router.push('/provider/bookings');
-  const handleManageClients = () => alert('Client management coming soon!');
   const handleViewReports = () => router.push('/provider/reports');
+  const handleViewServices = () => router.push('/provider/services');
 
   if (loading) {
     return (
@@ -94,7 +94,7 @@ const ProviderDashboard = () => {
         {/* Today's Bookings */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Today's Bookings</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Today&apos;s Bookings</h2>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -148,9 +148,9 @@ const ProviderDashboard = () => {
               <Calendar className="w-5 h-5 mr-2" />
               View Schedule
             </button>
-            <button onClick={handleManageClients} className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+            <button onClick={handleViewServices} className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               <Users className="w-5 h-5 mr-2" />
-              Manage Clients
+              Manage Services
             </button>
             <button onClick={handleViewReports} className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               <TrendingUp className="w-5 h-5 mr-2" />
@@ -163,21 +163,21 @@ const ProviderDashboard = () => {
       {/* Performance Overview */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">This Week's Performance</h2>
+          <h2 className="text-lg font-semibold text-gray-900">This Week&apos;s Performance</h2>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-rose-primary">{dashboardData?.totalBookings || 0}</div>
-              <div className="text-sm text-gray-600">Total Bookings</div>
+              <div className="text-2xl font-bold text-rose-primary">{dashboardData?.weeklyBookings || 0}</div>
+              <div className="text-sm text-gray-600">Weekly Bookings</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">KES {(dashboardData?.weeklyRevenue || 0).toLocaleString()}</div>
               <div className="text-sm text-gray-600">Weekly Revenue</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{dashboardData?.weeklyBookings || 0}</div>
-              <div className="text-sm text-gray-600">Weekly Bookings</div>
+              <div className="text-2xl font-bold text-blue-600">KES {Math.round((dashboardData?.weeklyRevenue || 0) * 0.15).toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Commission (15%)</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-600">{(dashboardData?.avgRating || 0).toFixed(1)}★</div>

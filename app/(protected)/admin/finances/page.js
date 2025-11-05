@@ -1,23 +1,31 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Users, Calendar, Download, Eye } from 'lucide-react';
-import { ADMIN_DATA, NORMALIZED_BOOKINGS, PLATFORM_SETTINGS } from '@/lib/admin-constants';
 
 export default function AdminFinancesPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [activeTab, setActiveTab] = useState('overview');
+  const [financeData, setFinanceData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Calculate financial metrics
-  const totalRevenue = NORMALIZED_BOOKINGS.reduce((sum, booking) => sum + booking.price, 0);
-  const totalCommission = NORMALIZED_BOOKINGS.reduce((sum, booking) => sum + booking.commission, 0);
-  const totalProviderEarnings = NORMALIZED_BOOKINGS.reduce((sum, booking) => sum + booking.providerEarning, 0);
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch('/api/admin/finances', {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
+      setFinanceData(data);
+      setLoading(false);
+    });
+  }, []);
 
-  const pendingPayouts = [
-    { id: 1, provider: 'Sarah Johnson', amount: 45000, bookings: 12, dueDate: '2024-01-20' },
-    { id: 2, provider: 'Mary Wanjiku', amount: 32000, bookings: 8, dueDate: '2024-01-20' },
-    { id: 3, provider: 'Jane Doe', amount: 28000, bookings: 6, dueDate: '2024-01-20' }
-  ];
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
+
+  const totalRevenue = financeData?.totalRevenue || 0;
+  const totalCommission = financeData?.totalCommission || 0;
+  const totalProviderEarnings = financeData?.totalProviderEarnings || 0;
+  const pendingPayouts = financeData?.pendingPayouts || [];
 
   const recentTransactions = [
     { id: 1, type: 'commission', description: 'Booking #001 - Hair Styling', amount: 525, date: '2024-01-15' },
@@ -27,13 +35,29 @@ export default function AdminFinancesPage() {
   ];
 
   const handleExport = (type) => {
-    console.log(`Exporting ${type} report`);
-    // Backend integration point
+    const data = {
+      totalRevenue,
+      totalCommission,
+      totalProviderEarnings,
+      pendingPayouts,
+      exportDate: new Date().toISOString(),
+      period: selectedPeriod
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `financial-report-${type}-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    alert('Financial report exported successfully!');
   };
 
   const handlePayout = (payoutId) => {
-    console.log('Processing payout:', payoutId);
-    // Backend integration point
+    if (confirm('Process this payout? This will mark it as paid.')) {
+      alert(`Payout ${payoutId} processed! In production, this would trigger actual payment.`);
+    }
   };
 
   return (
@@ -78,7 +102,7 @@ export default function AdminFinancesPage() {
             <div>
               <p className="text-sm text-gray-600">Platform Commission</p>
               <p className="text-2xl font-bold text-purple-600">KES {totalCommission.toLocaleString()}</p>
-              <p className="text-xs text-gray-500 mt-1">{PLATFORM_SETTINGS.commission.rate * 100}% of revenue</p>
+              <p className="text-xs text-gray-500 mt-1">15% of revenue</p>
             </div>
             <TrendingUp className="w-8 h-8 text-purple-600" />
           </div>
@@ -128,27 +152,11 @@ export default function AdminFinancesPage() {
         <div className="p-6">
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* Revenue Trend */}
+              {/* Financial Summary */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Revenue Trend</h3>
-                <div className="space-y-3">
-                  {ADMIN_DATA.monthlyMetrics.map((month) => (
-                    <div key={month.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium text-gray-700 w-12">{month.month}</span>
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 w-48">
-                          <div
-                            className="bg-rose-primary h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${(month.revenue / Math.max(...ADMIN_DATA.monthlyMetrics.map(m => m.revenue))) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900">KES {month.revenue.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">{month.bookings} bookings</p>
-                      </div>
-                    </div>
-                  ))}
+                <h3 className="text-lg font-semibold mb-4">Financial Summary</h3>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Platform is generating consistent revenue from bookings. Commission rate is set at 15% of total booking value.</p>
                 </div>
               </div>
 

@@ -1,15 +1,28 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Search, Filter, MoreVertical, CheckCircle, XCircle, Eye, Edit, Trash2 } from 'lucide-react';
-import { NORMALIZED_USERS } from '@/lib/admin-constants';
 
 export default function AdminUsersPage() {
   const [activeTab, setActiveTab] = useState('providers');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [allUsers, setAllUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [viewingUser, setViewingUser] = useState(null);
 
-  const allUsers = activeTab === 'providers' ? NORMALIZED_USERS.providers : NORMALIZED_USERS.clients;
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch(`/api/admin/users?type=${activeTab}`, {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
+      setAllUsers(Array.isArray(data) ? data : []);
+      setLoading(false);
+    });
+  }, [activeTab]);
+
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 
   const filteredUsers = allUsers.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -19,8 +32,16 @@ export default function AdminUsersPage() {
   });
 
   const handleUserAction = (action, userId) => {
-    console.log(`${action} user:`, userId);
-    // Backend integration point
+    if (action === 'view') {
+      const user = allUsers.find(u => u.id === userId);
+      setViewingUser(user);
+    } else if (action === 'edit') {
+      alert('Edit functionality: Navigate to user profile page');
+    } else if (action === 'delete') {
+      if (confirm('Are you sure you want to delete this user?')) {
+        alert('Delete functionality: Would call DELETE /api/admin/users/' + userId);
+      }
+    }
   };
 
   const getStatusBadge = (status, verified = true) => {
@@ -60,7 +81,7 @@ export default function AdminUsersPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {tab} ({tab === 'providers' ? NORMALIZED_USERS.providers.length : NORMALIZED_USERS.clients.length})
+                {tab}
               </button>
             ))}
           </nav>
@@ -200,6 +221,96 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+
+      {/* View User Modal */}
+      {viewingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-xl font-bold">User Details</h2>
+              <button onClick={() => setViewingUser(null)} className="text-gray-400 hover:text-gray-600">
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-600">Name</label>
+                  <p className="font-medium">{viewingUser.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Email</label>
+                  <p className="font-medium">{viewingUser.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Phone</label>
+                  <p className="font-medium">{viewingUser.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Role</label>
+                  <p className="font-medium">{viewingUser.role}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Status</label>
+                  <p className="font-medium">{viewingUser.status}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Joined</label>
+                  <p className="font-medium">{new Date(viewingUser.joinDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+              {activeTab === 'providers' && (
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div>
+                    <label className="text-sm text-gray-600">Specialty</label>
+                    <p className="font-medium">{viewingUser.specialty || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Experience</label>
+                    <p className="font-medium">{viewingUser.experience || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Total Revenue</label>
+                    <p className="font-medium">KES {viewingUser.totalRevenue?.toLocaleString() || 0}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Total Bookings</label>
+                    <p className="font-medium">{viewingUser.totalBookings || 0}</p>
+                  </div>
+                </div>
+              )}
+              {activeTab === 'clients' && (
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div>
+                    <label className="text-sm text-gray-600">Tier</label>
+                    <p className="font-medium">{viewingUser.tier}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Points</label>
+                    <p className="font-medium">{viewingUser.points || 0}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Total Spent</label>
+                    <p className="font-medium">KES {viewingUser.totalSpent?.toLocaleString() || 0}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Total Bookings</label>
+                    <p className="font-medium">{viewingUser.totalBookings || 0}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setViewingUser(null)}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { Settings, Save, RefreshCw, Shield, DollarSign, Users, Bell } from 'lucide-react';
-import { PLATFORM_CONFIG } from '@/lib/normalized-data';
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('platform');
-  const [settings, setSettings] = useState({
+  const defaultSettings = {
     platform: {
       siteName: 'Glamease',
       siteDescription: 'Your premier beauty services platform',
@@ -15,15 +14,15 @@ export default function AdminSettingsPage() {
       allowRegistrations: true
     },
     commission: {
-      rate: PLATFORM_CONFIG.commission.rate,
-      minimum: PLATFORM_CONFIG.commission.minimum,
-      maximum: PLATFORM_CONFIG.commission.maximum
+      rate: 0.15,
+      minimum: 50,
+      maximum: 5000
     },
     points: {
-      earningRate: PLATFORM_CONFIG.points.earningRate,
-      bonusPoints: { ...PLATFORM_CONFIG.points.bonusPoints },
-      redemptionMinimum: PLATFORM_CONFIG.points.redemptionMinimum,
-      expiryMonths: PLATFORM_CONFIG.points.expiryMonths
+      earningRate: 10,
+      bonusPoints: { firstBooking: 500, review: 50, referral: 200 },
+      redemptionMinimum: 100,
+      expiryMonths: 12
     },
     notifications: {
       emailNotifications: true,
@@ -44,6 +43,14 @@ export default function AdminSettingsPage() {
       processingDays: 3,
       autoProcess: false
     }
+  };
+
+  const [settings, setSettings] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adminSettings');
+      return saved ? JSON.parse(saved) : defaultSettings;
+    }
+    return defaultSettings;
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -74,9 +81,8 @@ export default function AdminSettingsPage() {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Settings saved:', settings);
+      localStorage.setItem('adminSettings', JSON.stringify(settings));
+      await new Promise(resolve => setTimeout(resolve, 500));
       alert('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -88,8 +94,9 @@ export default function AdminSettingsPage() {
 
   const resetToDefaults = () => {
     if (confirm('Are you sure you want to reset all settings to defaults?')) {
-      // Reset logic here
-      console.log('Resetting to defaults');
+      setSettings(defaultSettings);
+      localStorage.setItem('adminSettings', JSON.stringify(defaultSettings));
+      alert('Settings reset to defaults!');
     }
   };
 

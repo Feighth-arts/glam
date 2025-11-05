@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Eye, DollarSign, Clock, Star } from 'lucide-react';
-import { SERVICE_CATALOG, USERS } from '@/lib/normalized-data';
 
 export default function AdminServicesPage() {
-  const [services, setServices] = useState(SERVICE_CATALOG);
+  const [services, setServices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [isAddingService, setIsAddingService] = useState(false);
   const [editingService, setEditingService] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [newService, setNewService] = useState({
     name: '',
@@ -18,6 +18,28 @@ export default function AdminServicesPage() {
     duration: '',
     description: ''
   });
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch('/api/services', {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
+      const formattedServices = (Array.isArray(data) ? data : []).map(s => ({
+        id: s.id,
+        name: s.name,
+        category: s.category?.name || 'Uncategorized',
+        basePrice: parseFloat(s.basePrice),
+        duration: s.duration,
+        description: s.description || '',
+        points: s.points
+      }));
+      setServices(formattedServices);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 
   const categories = ['all', ...new Set(services.map(s => s.category))];
 
@@ -28,20 +50,44 @@ export default function AdminServicesPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleAddService = () => {
+  const handleAddService = async () => {
     if (!newService.name || !newService.basePrice) return;
     
-    const service = {
-      id: Math.max(...services.map(s => s.id)) + 1,
-      ...newService,
-      basePrice: Number(newService.basePrice),
-      duration: Number(newService.duration),
-      points: Math.floor(Number(newService.basePrice) / 100)
-    };
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
     
-    setServices([...services, service]);
-    setNewService({ name: '', category: '', basePrice: '', duration: '', description: '' });
-    setIsAddingService(false);
+    const response = await fetch('/api/admin/services', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-user-id': userId, 
+        'x-user-role': userRole 
+      },
+      body: JSON.stringify({
+        name: newService.name,
+        description: newService.description,
+        category: newService.category,
+        price: Number(newService.basePrice),
+        duration: Number(newService.duration),
+        pointsValue: Math.floor(Number(newService.basePrice) / 100),
+        providerId: userId
+      })
+    });
+    
+    if (response.ok) {
+      const created = await response.json();
+      setServices([...services, {
+        id: created.id,
+        name: created.name,
+        category: newService.category,
+        basePrice: created.price,
+        duration: created.duration,
+        description: created.description,
+        points: created.pointsValue
+      }]);
+      setNewService({ name: '', category: '', basePrice: '', duration: '', description: '' });
+      setIsAddingService(false);
+    }
   };
 
   const handleEditService = (service) => {
@@ -55,30 +101,59 @@ export default function AdminServicesPage() {
     });
   };
 
-  const handleUpdateService = () => {
-    setServices(services.map(service => 
-      service.id === editingService 
-        ? {
-            ...service,
-            ...newService,
-            basePrice: Number(newService.basePrice),
-            duration: Number(newService.duration),
-            points: Math.floor(Number(newService.basePrice) / 100)
-          }
-        : service
-    ));
-    setEditingService(null);
-    setNewService({ name: '', category: '', basePrice: '', duration: '', description: '' });
-  };
-
-  const handleDeleteService = (serviceId) => {
-    if (confirm('Are you sure you want to delete this service?')) {
-      setServices(services.filter(s => s.id !== serviceId));
+  const handleUpdateService = async () => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    
+    const response = await fetch('/api/admin/services', {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-user-id': userId, 
+        'x-user-role': userRole 
+      },
+      body: JSON.stringify({
+        id: editingService,
+        name: newService.name,
+        description: newService.description,
+        category: newService.category,
+        price: Number(newService.basePrice),
+        duration: Number(newService.duration),
+        pointsValue: Math.floor(Number(newService.basePrice) / 100)
+      })
+    });
+    
+    if (response.ok) {
+      setServices(services.map(service => 
+        service.id === editingService 
+          ? {
+              ...service,
+              ...newService,
+              basePrice: Number(newService.basePrice),
+              duration: Number(newService.duration),
+              points: Math.floor(Number(newService.basePrice) / 100)
+            }
+          : service
+      ));
+      setEditingService(null);
+      setNewService({ name: '', category: '', basePrice: '', duration: '', description: '' });
     }
   };
 
-  const getServiceProviders = (serviceId) => {
-    return USERS.providers.filter(provider => provider.services.includes(serviceId));
+  const handleDeleteService = async (serviceId) => {
+    if (!confirm('Are you sure you want to delete this service?')) return;
+    
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    
+    const response = await fetch(`/api/admin/services?id=${serviceId}`, {
+      method: 'DELETE',
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    });
+    
+    if (response.ok) {
+      setServices(services.filter(s => s.id !== serviceId));
+    }
   };
 
   return (
@@ -235,9 +310,7 @@ export default function AdminServicesPage() {
 
       {/* Services Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredServices.map((service) => {
-          const providers = getServiceProviders(service.id);
-          return (
+        {filteredServices.map((service) => (
             <div key={service.id} className="bg-white rounded-lg shadow p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -277,14 +350,9 @@ export default function AdminServicesPage() {
                   <span className="text-sm text-gray-600">Points</span>
                   <span className="font-semibold text-green-600">{service.points} pts</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Providers</span>
-                  <span className="font-semibold text-purple-600">{providers.length}</span>
-                </div>
               </div>
             </div>
-          );
-        })}
+        ))}
       </div>
 
       {filteredServices.length === 0 && (
