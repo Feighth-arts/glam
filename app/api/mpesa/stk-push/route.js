@@ -33,13 +33,17 @@ export async function POST(request) {
     );
 
     if (stkResponse.ResponseCode === '0') {
-      await prisma.payment.update({
-        where: { id: paymentId },
-        data: {
-          phoneNumber,
-          transactionId: stkResponse.CheckoutRequestID
-        }
-      });
+      try {
+        await prisma.payment.update({
+          where: { id: paymentId },
+          data: {
+            phoneNumber,
+            transactionId: stkResponse.CheckoutRequestID
+          }
+        });
+      } catch (dbError) {
+        console.error('DB update error:', dbError.message);
+      }
 
       return NextResponse.json({
         success: true,

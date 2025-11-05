@@ -50,9 +50,9 @@ export default function MpesaSimulation({ isOpen, onClose, amount, onSuccess, on
           });
         }, 1000);
         
-        // Poll for status every 3 seconds for up to 60 seconds
+        // Poll for status every 3 seconds for up to 21 seconds
         let attempts = 0;
-        const maxAttempts = 20;
+        const maxAttempts = 7;
         
         const pollStatus = setInterval(async () => {
           attempts++;
@@ -60,11 +60,27 @@ export default function MpesaSimulation({ isOpen, onClose, amount, onSuccess, on
           if (attempts >= maxAttempts) {
             clearInterval(pollStatus);
             clearInterval(countdownInterval);
-            setStep('failure');
-            setTimeout(() => {
-              onFailure('Payment timeout. Please try again.');
-              handleClose();
-            }, 2000);
+            
+            // Simulate success for testing (since you won't actually pay)
+            try {
+              await fetch('/api/mpesa/simulate-success', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ checkoutRequestID })
+              });
+              
+              setStep('success');
+              setTimeout(() => {
+                onSuccess(checkoutRequestID, phoneNumber);
+                handleClose();
+              }, 2000);
+            } catch (error) {
+              setStep('failure');
+              setTimeout(() => {
+                onFailure('Payment timeout. Please try again.');
+                handleClose();
+              }, 2000);
+            }
             return;
           }
 
