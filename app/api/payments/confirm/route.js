@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserId, getUserRole } from '@/lib/auth-helper';
+import { sendBookingStatusUpdate } from '@/lib/email-service';
 
 export async function POST(request) {
   try {
@@ -38,7 +39,11 @@ export async function POST(request) {
 
       const booking = await prisma.booking.update({
         where: { id: payment.bookingId },
-        data: { status: 'PAID' }
+        data: { status: 'PAID' },
+        include: {
+          client: true,
+          service: true
+        }
       });
 
       await prisma.notification.create({
@@ -49,6 +54,22 @@ export async function POST(request) {
           content: { message: 'Your payment has been confirmed. Booking is now active.' }
         }
       });
+
+      // Send email notification
+      if (booking.client?.email) {
+        await sendBookingStatusUpdate(
+          {
+            id: booking.id,
+            serviceName: booking.service?.name || 'Service',
+            date: booking.bookingDatetime.toISOString().split('T')[0],
+            time: booking.bookingDatetime.toISOString().split('T')[1].slice(0, 5),
+            totalAmount: booking.totalAmount
+          },
+          booking.client.email,
+          booking.client.name,
+          'PAID'
+        );
+      }
 
       return NextResponse.json({ success: true, message: 'Payment confirmed' });
     } else {

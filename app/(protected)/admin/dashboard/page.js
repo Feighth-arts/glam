@@ -1,14 +1,30 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Users, Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle, Clock, Star } from "lucide-react";
-import { ADMIN_DATA } from "@/lib/admin-constants";
 
 const AdminDashboard = () => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch('/api/dashboard', {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
+      setDashboardData(data);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
+
   const stats = [
-    { label: "Total Users", value: ADMIN_DATA?.platformStats?.totalUsers || 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Active Bookings", value: ADMIN_DATA?.platformStats?.activeBookings || 0, icon: Calendar, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Monthly Revenue", value: `KES ${(ADMIN_DATA?.platformStats?.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Growth Rate", value: `${ADMIN_DATA?.platformStats?.monthlyGrowth || 0}%`, icon: TrendingUp, color: "text-rose-600", bg: "bg-rose-50" }
+    { label: "Total Users", value: dashboardData?.totalUsers || 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Total Bookings", value: dashboardData?.totalBookings || 0, icon: Calendar, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Total Revenue", value: `KES ${(dashboardData?.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Commission", value: `KES ${(dashboardData?.totalCommission || 0).toLocaleString()}`, icon: TrendingUp, color: "text-rose-600", bg: "bg-rose-50" }
   ];
 
   const getActivityIcon = (type) => {
@@ -72,7 +88,7 @@ const AdminDashboard = () => {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {ADMIN_DATA?.recentActivity?.map((activity) => {
+              {dashboardData?.recentActivity?.slice(0, 10).map((activity) => {
                 const Icon = getActivityIcon(activity.type);
                 const colorClass = getActivityColor(activity.type);
                 return (
@@ -113,7 +129,7 @@ const AdminDashboard = () => {
                 <p className="text-sm text-gray-600">Awaiting verification</p>
               </div>
               <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm font-medium">
-                {ADMIN_DATA?.pendingApprovals?.providers || 0}
+                0
               </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
@@ -122,7 +138,7 @@ const AdminDashboard = () => {
                 <p className="text-sm text-gray-600">Require resolution</p>
               </div>
               <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium">
-                {ADMIN_DATA?.pendingApprovals?.disputes || 0}
+                0
               </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
@@ -131,7 +147,7 @@ const AdminDashboard = () => {
                 <p className="text-sm text-gray-600">Ready for processing</p>
               </div>
               <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                {ADMIN_DATA?.pendingApprovals?.payouts || 0}
+                0
               </span>
             </div>
           </div>
@@ -147,7 +163,7 @@ const AdminDashboard = () => {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {ADMIN_DATA?.topProviders?.map((provider, index) => (
+              {(dashboardData?.topProviders || []).map((provider, index) => (
                 <div key={provider.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-rose-100 rounded-full flex items-center justify-center">
@@ -180,7 +196,7 @@ const AdminDashboard = () => {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {ADMIN_DATA?.topClients?.map((client, index) => (
+              {(dashboardData?.topClients || []).map((client, index) => (
                 <div key={client.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">

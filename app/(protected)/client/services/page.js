@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Gift, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import MpesaSimulation from '@/components/MpesaSimulation';
+import { sendBookingConfirmation } from '@/lib/email-service';
 
 export default function ClientServicesPage() {
   const router = useRouter();
@@ -213,6 +215,9 @@ function BookingModal({ provider, service, onClose }) {
   });
   const [loading, setLoading] = useState(false);
   const [userPoints, setUserPoints] = useState(0);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showMpesa, setShowMpesa] = useState(false);
+  const [bookingData, setBookingData] = useState(null);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
@@ -220,7 +225,10 @@ function BookingModal({ provider, service, onClose }) {
     const headers = { 'x-user-id': userId, 'x-user-role': userRole };
     fetch('/api/users/profile', { headers })
       .then(res => res.json())
-      .then(data => setUserPoints(data.userPoints?.currentPoints || 0));
+      .then(data => {
+        setUserProfile(data);
+        setUserPoints(data.userPoints?.currentPoints || 0);
+      });
   }, []);
 
   const maxDiscount = service.price * 0.30;
@@ -249,19 +257,9 @@ function BookingModal({ provider, service, onClose }) {
       });
 
       if (res.ok) {
-        const { payment } = await res.json();
-        // Initiate M-Pesa
-        await fetch('/api/payments/mpesa', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentId: payment.id,
-            phoneNumber: formData.phoneNumber,
-            amount: finalPrice
-          })
-        });
-        alert('Booking created! Check your phone for M-Pesa prompt.');
-        onClose();
+        const data = await res.json();
+        setBookingData(data);
+        setShowMpesa(true);
       }
     } catch (error) {
       alert('Booking failed');
@@ -270,9 +268,53 @@ function BookingModal({ provider, service, onClose }) {
     }
   };
 
+  const handleMpesaSuccess = async (transactionId, phoneNumber) => {
+    try {
+      // Update payment with transaction ID
+      await fetch(`/api/payments/${bookingData.payment.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactionId, phoneNumber })
+      });
+
+      // Send email confirmation
+      if (userProfile?.email) {
+        await sendBookingConfirmation(
+          {
+            id: bookingData.booking.id,
+            serviceName: service.name,
+            date: formData.date,
+            time: formData.time,
+            totalAmount: finalPrice
+          },
+          userProfile.email,
+          userProfile.name
+        );
+      }
+
+      alert('Payment successful! Booking confirmed.');
+      onClose();
+      window.location.reload();
+    } catch (error) {
+      console.error('Post-payment error:', error);
+    }
+  };
+
+  const handleMpesaFailure = (error) => {
+    alert(`Payment failed: ${error}`);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+    <>
+      <MpesaSimulation
+        isOpen={showMpesa}
+        onClose={() => setShowMpesa(false)}
+        amount={finalPrice}
+        onSuccess={handleMpesaSuccess}
+        onFailure={handleMpesaFailure}
+      />
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Book {service.name}</h2>
         <p className="text-gray-600 mb-4">with {provider.name}</p>
         
@@ -375,5 +417,6 @@ function BookingModal({ provider, service, onClose }) {
         </form>
       </div>
     </div>
+    </>
   );
 }

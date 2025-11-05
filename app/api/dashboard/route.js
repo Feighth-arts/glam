@@ -14,7 +14,7 @@ export async function GET(request) {
 
     if (userRole === 'ADMIN') {
       // Admin dashboard stats
-      const [totalUsers, totalBookings, totalRevenue, recentActivity] = await Promise.all([
+      const [totalUsers, totalBookings, totalRevenue, recentActivity, topProviders, topClients] = await Promise.all([
         prisma.user.count(),
         prisma.booking.count(),
         prisma.booking.aggregate({
@@ -29,6 +29,30 @@ export async function GET(request) {
             provider: { select: { name: true } },
             service: { select: { name: true } }
           }
+        }),
+        prisma.user.findMany({
+          where: { role: 'PROVIDER' },
+          take: 5,
+          include: {
+            _count: { select: { providerBookings: true, providerReviews: true } },
+            providerBookings: {
+              where: { status: 'COMPLETED' },
+              select: { providerEarning: true, commission: true }
+            },
+            providerReviews: { select: { rating: true } }
+          }
+        }),
+        prisma.user.findMany({
+          where: { role: 'CLIENT' },
+          take: 5,
+          include: {
+            _count: { select: { clientBookings: true } },
+            clientBookings: {
+              where: { status: 'COMPLETED' },
+              select: { amount: true }
+            },
+            userPoints: true
+          }
         })
       ]);
 
@@ -37,7 +61,30 @@ export async function GET(request) {
         totalBookings,
         totalRevenue: totalRevenue._sum.amount || 0,
         totalCommission: totalRevenue._sum.commission || 0,
-        recentActivity
+        recentActivity: recentActivity.map(b => ({
+          id: b.id,
+          type: 'booking',
+          user: b.client?.name,
+          provider: b.provider?.name,
+          service: b.service?.name,
+          time: new Date(b.createdAt).toLocaleTimeString()
+        })),
+        topProviders: topProviders.map(p => ({
+          id: p.id,
+          name: p.name,
+          rating: p.providerReviews.length > 0 ? (p.providerReviews.reduce((sum, r) => sum + r.rating, 0) / p.providerReviews.length).toFixed(1) : 0,
+          bookings: p._count.providerBookings,
+          revenue: p.providerBookings.reduce((sum, b) => sum + parseFloat(b.providerEarning || 0), 0),
+          commission: p.providerBookings.reduce((sum, b) => sum + parseFloat(b.commission || 0), 0)
+        })),
+        topClients: topClients.map(c => ({
+          id: c.id,
+          name: c.name,
+          tier: c.userPoints?.tier || 'BRONZE',
+          bookings: c._count.clientBookings,
+          spent: c.clientBookings.reduce((sum, b) => sum + parseFloat(b.amount || 0), 0),
+          points: c.userPoints?.currentPoints || 0
+        }))
       };
 
     } else if (userRole === 'PROVIDER') {

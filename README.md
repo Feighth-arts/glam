@@ -12,7 +12,8 @@ A comprehensive beauty services booking platform built with Next.js, featuring p
 ### 💎 Core Functionality
 - **Service Management**: CRUD operations for beauty services with availability scheduling
 - **Booking System**: Real-time booking with status tracking and notifications
-- **Payment Integration**: Secure payment processing with M-Pesa integration ready
+- **Payment Integration**: M-Pesa simulation with STK push flow (demo mode)
+- **Email Notifications**: EmailJS integration for booking confirmations and updates
 - **Rewards System**: Points-based loyalty program with tier management
 - **Review System**: Client feedback and provider ratings
 - **Notification System**: Real-time updates for all user actions
@@ -22,7 +23,9 @@ A comprehensive beauty services booking platform built with Next.js, featuring p
 - **Frontend**: Next.js 15.4.6, React 19.1.0, Tailwind CSS 4.0
 - **Backend**: Next.js API Routes, Prisma ORM
 - **Database**: PostgreSQL with comprehensive schema
-- **Authentication**: Development bypass system (production-ready structure)
+- **Authentication**: localStorage-based session management
+- **Payments**: M-Pesa simulation modal
+- **Email**: EmailJS for notifications
 - **File Generation**: PDF reports with jsPDF
 - **Icons**: Lucide React, React Icons
 
@@ -54,8 +57,11 @@ cp .env.example .env.local
 Configure your `.env.local`:
 ```env
 DATABASE_URL="postgresql://username:password@localhost:5432/glamease"
-DEV_MODE=true
-DEV_USER_ID=prov_001  # or client_001, admin_001
+
+# EmailJS Configuration (optional - for email notifications)
+NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id
+NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id
+NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key
 ```
 
 4. Set up the database
@@ -133,6 +139,27 @@ The project includes a development authentication system:
 - `GET/POST /api/provider/services` - Provider service management
 - `PUT/DELETE /api/provider/services/[id]` - Individual service operations
 
+## EmailJS Setup (Optional)
+
+To enable email notifications:
+
+1. Create a free account at [EmailJS](https://www.emailjs.com/)
+2. Create an email service (Gmail, Outlook, etc.)
+3. Create an email template with these variables:
+   - `{{to_name}}`, `{{to_email}}`, `{{subject}}`, `{{message}}`
+   - `{{booking_id}}`, `{{service_name}}`, `{{booking_date}}`, `{{booking_time}}`
+   - `{{total_amount}}`, `{{status}}`
+4. Add your credentials to `.env.local`
+
+## M-Pesa Simulation
+
+The platform includes a simulated M-Pesa STK push flow:
+- Enter phone number (10 digits)
+- Enter PIN (4 digits)
+- 90% success rate simulation
+- Generates transaction IDs automatically
+- No actual M-Pesa API integration required
+
 ## Features Status
 
 ✅ **Completed**
@@ -140,17 +167,19 @@ The project includes a development authentication system:
 - Database integration with Prisma
 - Service management (CRUD)
 - Booking system with status tracking
+- M-Pesa payment simulation
+- Email notifications (EmailJS)
 - Notification system
 - User profile management
 - PDF report generation
 - Rewards/points system
 - Review and rating system
 
-🚧 **In Development**
-- Payment integration (M-Pesa)
-- Real-time notifications
+🚧 **Future Enhancements**
+- Real M-Pesa API integration
+- Real-time notifications (WebSockets)
 - Advanced analytics
-- Mobile responsiveness optimization
+- Mobile app
 
 ## Contributing
 
