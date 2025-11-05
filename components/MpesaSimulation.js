@@ -4,49 +4,114 @@ import { useState } from 'react';
 import { X, Smartphone, CheckCircle, XCircle } from 'lucide-react';
 
 export default function MpesaSimulation({ isOpen, onClose, amount, onSuccess, onFailure }) {
-  const [step, setStep] = useState('phone'); // phone, pin, processing, success, failure
+  const [step, setStep] = useState('phone'); // phone, waiting, success, failure
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [pin, setPin] = useState('');
+  const [countdown, setCountdown] = useState(60);
 
-  const handlePhoneSubmit = (e) => {
+  const handlePhoneSubmit = async (e) => {
     e.preventDefault();
     if (phoneNumber.length === 10) {
-      setStep('pin');
-    }
-  };
-
-  const handlePinSubmit = (e) => {
-    e.preventDefault();
-    if (pin.length === 4) {
-      setStep('processing');
+      setStep('waiting');
+      setCountdown(60);
       
-      // Simulate processing delay
-      setTimeout(() => {
-        // 90% success rate simulation
-        const isSuccess = Math.random() > 0.1;
-        
-        if (isSuccess) {
-          setStep('success');
-          const transactionId = `MPE${Date.now()}${Math.floor(Math.random() * 1000)}`;
-          setTimeout(() => {
-            onSuccess(transactionId, phoneNumber);
-            handleClose();
-          }, 2000);
-        } else {
+      try {
+        // Initiate STK push
+        const response = await fetch('/api/mpesa/stk-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentId: window.currentPaymentId,
+            phoneNumber,
+            amount
+          })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
           setStep('failure');
           setTimeout(() => {
-            onFailure('Transaction failed. Please try again.');
+            onFailure(data.error || 'Failed to send STK push');
             handleClose();
           }, 2000);
+          return;
         }
-      }, 2000);
+
+        const checkoutRequestID = data.checkoutRequestID;
+        
+        // Start countdown
+        const countdownInterval = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              clearInterval(countdownInterval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        
+        // Poll for status every 3 seconds for up to 60 seconds
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        const pollStatus = setInterval(async () => {
+          attempts++;
+          
+          if (attempts >= maxAttempts) {
+            clearInterval(pollStatus);
+            clearInterval(countdownInterval);
+            setStep('failure');
+            setTimeout(() => {
+              onFailure('Payment timeout. Please try again.');
+              handleClose();
+            }, 2000);
+            return;
+          }
+
+          try {
+            const statusResponse = await fetch('/api/mpesa/query', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ checkoutRequestID })
+            });
+
+            const statusData = await statusResponse.json();
+
+            if (statusData.resultCode === 0) {
+              clearInterval(pollStatus);
+              clearInterval(countdownInterval);
+              setStep('success');
+              setTimeout(() => {
+                onSuccess(checkoutRequestID, phoneNumber);
+                handleClose();
+              }, 2000);
+            } else if (statusData.resultCode && statusData.resultCode !== 1032) {
+              clearInterval(pollStatus);
+              clearInterval(countdownInterval);
+              setStep('failure');
+              setTimeout(() => {
+                onFailure(statusData.resultDesc || 'Payment failed');
+                handleClose();
+              }, 2000);
+            }
+          } catch (error) {
+            console.error('Poll error:', error);
+          }
+        }, 3000);
+      } catch (error) {
+        setStep('failure');
+        setTimeout(() => {
+          onFailure('Network error. Please try again.');
+          handleClose();
+        }, 2000);
+      }
     }
   };
 
   const handleClose = () => {
     setStep('phone');
     setPhoneNumber('');
-    setPin('');
+    setCountdown(60);
     onClose();
   };
 
@@ -98,43 +163,43 @@ export default function MpesaSimulation({ isOpen, onClose, amount, onSuccess, on
           </form>
         )}
 
-        {step === 'pin' && (
-          <form onSubmit={handlePinSubmit} className="space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-green-800 text-center">
+        {step === 'waiting' && (
+          <div className="text-center py-8">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-green-800 font-medium mb-2">
                 STK Push sent to <strong>{phoneNumber}</strong>
               </p>
+              <p className="text-xs text-green-700">
+                Check your phone and enter your M-Pesa PIN
+              </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enter M-Pesa PIN
-              </label>
-              <input
-                type="password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="••••"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                required
-                maxLength={4}
-                autoFocus
-              />
+            
+            <div className="relative w-24 h-24 mx-auto mb-4">
+              <div className="absolute inset-0 border-4 border-green-200 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-green-600 rounded-full border-t-transparent animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Smartphone className="w-10 h-10 text-green-600" />
+              </div>
             </div>
+            
+            <p className="text-gray-600 font-medium mb-2">Waiting for confirmation...</p>
+            <p className="text-sm text-gray-500">Time remaining: {countdown}s</p>
+            
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-600 mb-2">Steps to complete:</p>
+              <ol className="text-xs text-gray-700 text-left space-y-1">
+                <li>1. Check your phone for M-Pesa prompt</li>
+                <li>2. Enter your M-Pesa PIN</li>
+                <li>3. Confirm the payment</li>
+              </ol>
+            </div>
+            
             <button
-              type="submit"
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-300"
-              disabled={pin.length !== 4}
+              onClick={handleClose}
+              className="mt-4 text-sm text-gray-500 hover:text-gray-700 underline"
             >
-              Confirm Payment
+              Cancel
             </button>
-          </form>
-        )}
-
-        {step === 'processing' && (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Processing payment...</p>
-            <p className="text-sm text-gray-500 mt-2">Please wait</p>
           </div>
         )}
 

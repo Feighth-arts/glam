@@ -80,6 +80,47 @@ export async function PUT(request, { params }) {
       }
     });
 
+    // Award points when booking is completed
+    if (status === 'COMPLETED' && booking.status !== 'COMPLETED') {
+      const pointsToAward = booking.pointsEarned || 0;
+      
+      if (pointsToAward > 0) {
+        await prisma.userPoints.update({
+          where: { userId: booking.clientId },
+          data: {
+            currentPoints: { increment: pointsToAward },
+            lifetimePoints: { increment: pointsToAward }
+          }
+        });
+
+        // Update tier based on lifetime points
+        const userPoints = await prisma.userPoints.findUnique({
+          where: { userId: booking.clientId }
+        });
+        
+        let newTier = 'BRONZE';
+        if (userPoints.lifetimePoints >= 5000) newTier = 'PLATINUM';
+        else if (userPoints.lifetimePoints >= 1000) newTier = 'GOLD';
+        
+        if (userPoints.tier !== newTier) {
+          await prisma.userPoints.update({
+            where: { userId: booking.clientId },
+            data: { tier: newTier }
+          });
+        }
+
+        // Create notification
+        await prisma.notification.create({
+          data: {
+            userId: booking.clientId,
+            type: 'SYSTEM',
+            subject: 'Points Awarded',
+            content: { message: `You earned ${pointsToAward} points from your completed booking!` }
+          }
+        });
+      }
+    }
+
     return NextResponse.json(updatedBooking);
   } catch (error) {
     console.error('Update booking error:', error);

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Star, Search, Gift } from 'lucide-react';
+import { Calendar, Clock, MapPin, Star, Search, Gift, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import MpesaSimulation from '@/components/MpesaSimulation';
+import { sendBookingConfirmation } from '@/lib/email-service';
 
 export default function ClientBookingsPage() {
   const router = useRouter();
@@ -10,30 +12,75 @@ export default function ClientBookingsPage() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showMpesa, setShowMpesa] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
-    fetch('/api/bookings', {
-      headers: { 'x-user-id': userId, 'x-user-role': userRole }
-    }).then(r => r.json()).then(data => {
-      setBookings(Array.isArray(data) ? data : []);
-      setLoading(false);
-    }).catch(() => {
-      setBookings([]);
-      setLoading(false);
-    });
+    const headers = { 'x-user-id': userId, 'x-user-role': userRole };
+    
+    fetch('/api/bookings', { headers })
+      .then(r => r.json())
+      .then(data => {
+        setBookings(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setBookings([]);
+        setLoading(false);
+      });
+    
+    fetch('/api/users/profile', { headers })
+      .then(r => r.json())
+      .then(data => setUserProfile(data));
   }, []);
 
   const handleNewBooking = () => router.push('/client/services');
   const handleCancel = async (id) => {
     if (!confirm('Cancel this booking?')) return;
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
     await fetch(`/api/bookings/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
       body: JSON.stringify({ status: 'CANCELLED' })
     });
     setBookings(bookings.map(b => b.id === id ? {...b, status: 'CANCELLED'} : b));
+  };
+
+  const handlePayNow = (booking) => {
+    setSelectedBooking(booking);
+    window.currentPaymentId = booking.payment?.id;
+    setShowMpesa(true);
+  };
+
+  const handleMpesaSuccess = async (transactionId, phoneNumber) => {
+    try {
+      if (userProfile?.email) {
+        await sendBookingConfirmation(
+          {
+            id: selectedBooking.id,
+            serviceName: selectedBooking.service?.name,
+            date: new Date(selectedBooking.bookingDatetime).toLocaleDateString(),
+            time: new Date(selectedBooking.bookingDatetime).toLocaleTimeString(),
+            totalAmount: selectedBooking.amount
+          },
+          userProfile.email,
+          userProfile.name
+        );
+      }
+
+      alert('Payment successful!');
+      window.location.reload();
+    } catch (error) {
+      console.error('Payment error:', error);
+    }
+  };
+
+  const handleMpesaFailure = (error) => {
+    alert(`Payment failed: ${error}`);
   };
 
   if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
@@ -130,16 +177,35 @@ export default function ClientBookingsPage() {
                   <p className="text-lg font-semibold text-gray-900">KES {parseFloat(booking.amount).toLocaleString()}</p>
                   <p className="text-sm text-green-600">+{booking.pointsEarned} points</p>
                 </div>
-                {['PAID', 'CONFIRMED'].includes(booking.status) && (
-                  <button onClick={() => handleCancel(booking.id)} className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50">
-                    Cancel
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {booking.status === 'PENDING_PAYMENT' && (
+                    <button 
+                      onClick={() => handlePayNow(booking)} 
+                      className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+                    >
+                      <CreditCard className="w-3 h-3" />
+                      Pay Now
+                    </button>
+                  )}
+                  {['PAID', 'CONFIRMED'].includes(booking.status) && (
+                    <button onClick={() => handleCancel(booking.id)} className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50">
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      <MpesaSimulation
+        isOpen={showMpesa}
+        onClose={() => setShowMpesa(false)}
+        amount={selectedBooking?.amount || 0}
+        onSuccess={handleMpesaSuccess}
+        onFailure={handleMpesaFailure}
+      />
     </div>
   );
 }

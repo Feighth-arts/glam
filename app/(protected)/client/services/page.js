@@ -210,8 +210,7 @@ function BookingModal({ provider, service, onClose }) {
     time: '',
     location: '',
     notes: '',
-    pointsToRedeem: 0,
-    phoneNumber: ''
+    pointsToRedeem: 0
   });
   const [loading, setLoading] = useState(false);
   const [userPoints, setUserPoints] = useState(0);
@@ -251,15 +250,17 @@ function BookingModal({ provider, service, onClose }) {
           bookingDatetime: `${formData.date}T${formData.time}`,
           location: formData.location,
           notes: formData.notes,
-          pointsToRedeem: formData.pointsToRedeem,
-          phoneNumber: formData.phoneNumber
+          pointsToRedeem: formData.pointsToRedeem
         })
       });
 
       if (res.ok) {
         const data = await res.json();
         setBookingData(data);
+        window.currentPaymentId = data.payment.id;
         setShowMpesa(true);
+      } else {
+        alert('Booking failed');
       }
     } catch (error) {
       alert('Booking failed');
@@ -270,14 +271,6 @@ function BookingModal({ provider, service, onClose }) {
 
   const handleMpesaSuccess = async (transactionId, phoneNumber) => {
     try {
-      // Update payment with transaction ID
-      await fetch(`/api/payments/${bookingData.payment.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactionId, phoneNumber })
-      });
-
-      // Send email confirmation
       if (userProfile?.email) {
         await sendBookingConfirmation(
           {
@@ -336,17 +329,6 @@ function BookingModal({ provider, service, onClose }) {
               required
               value={formData.time}
               onChange={(e) => setFormData({...formData, time: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Phone Number (M-Pesa)</label>
-            <input
-              type="tel"
-              required
-              placeholder="254712345678"
-              value={formData.phoneNumber}
-              onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
               className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
