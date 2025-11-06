@@ -94,7 +94,9 @@ export async function GET(request) {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const [totalStats, todayBookings, weeklyStats, monthlyStats] = await Promise.all([
+      console.log('Fetching provider dashboard for userId:', userId);
+      
+      const [totalStats, allBookingsCount, todayBookings, weeklyStats, monthlyStats] = await Promise.all([
         prisma.booking.aggregate({
           where: { 
             providerId: userId,
@@ -102,6 +104,9 @@ export async function GET(request) {
           },
           _sum: { providerEarning: true },
           _count: true
+        }),
+        prisma.booking.count({
+          where: { providerId: userId }
         }),
         prisma.booking.findMany({
           where: {
@@ -162,9 +167,17 @@ export async function GET(request) {
         _count: true
       });
 
+      console.log('Provider stats:', {
+        allBookings: allBookingsCount,
+        completedBookings: totalStats._count,
+        totalRevenue: totalStats._sum.providerEarning,
+        todayBookingsCount: todayBookings.length,
+        weeklyBookings: weeklyStats._count
+      });
+
       dashboardData = {
         totalRevenue: totalStats._sum.providerEarning || 0,
-        totalBookings: totalStats._count,
+        totalBookings: allBookingsCount,
         todayBookings,
         weeklyRevenue: weeklyStats._sum.providerEarning || 0,
         weeklyBookings: weeklyStats._count,

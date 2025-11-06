@@ -210,6 +210,7 @@ function BookingModal({ provider, service, onClose }) {
   });
   const [loading, setLoading] = useState(false);
   const [userPoints, setUserPoints] = useState(0);
+  const [availablePoints, setAvailablePoints] = useState(0);
   const [userProfile, setUserProfile] = useState(null);
   const [showMpesa, setShowMpesa] = useState(false);
   const [bookingData, setBookingData] = useState(null);
@@ -218,16 +219,34 @@ function BookingModal({ provider, service, onClose }) {
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
     const headers = { 'x-user-id': userId, 'x-user-role': userRole };
+    
     fetch('/api/users/profile', { headers })
       .then(res => res.json())
       .then(data => {
         setUserProfile(data);
         setUserPoints(data.userPoints?.currentPoints || 0);
       });
-  }, []);
+    
+    // Fetch provider-specific points
+    fetch('/api/bookings', { headers })
+      .then(res => res.json())
+      .then(bookings => {
+        const providerBookings = bookings.filter(b => 
+          b.providerId === provider.id && b.status === 'COMPLETED'
+        );
+        const earnedFromProvider = providerBookings.reduce((sum, b) => sum + (b.pointsEarned || 0), 0);
+        
+        // Get redeemed points with this provider
+        const redeemedBookings = bookings.filter(b => 
+          b.providerId === provider.id && b.status !== 'CANCELLED'
+        );
+        // Estimate redeemed (this is approximate, ideally fetch from transactions)
+        setAvailablePoints(earnedFromProvider);
+      });
+  }, [provider.id]);
 
   const maxDiscount = service.price * 0.30;
-  const maxPoints = Math.min(userPoints, maxDiscount);
+  const maxPoints = Math.min(availablePoints, maxDiscount);
   const finalPrice = service.price - Math.min(formData.pointsToRedeem, maxDiscount);
 
   const handleSubmit = async (e) => {
@@ -340,7 +359,9 @@ function BookingModal({ provider, service, onClose }) {
               onChange={(e) => setFormData({...formData, pointsToRedeem: parseInt(e.target.value) || 0})}
               className="w-full px-3 py-2 border rounded-lg"
             />
-            <p className="text-sm text-gray-600 mt-1">You have {userPoints} points</p>
+            <p className="text-sm text-gray-600 mt-1">
+              {availablePoints} points available with this provider (Total: {userPoints})
+            </p>
           </div>
           <div className="border-t pt-4">
             <div className="flex justify-between mb-2">

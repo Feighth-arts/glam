@@ -10,7 +10,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {
@@ -41,7 +41,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { status } = body;
 
@@ -130,7 +130,7 @@ export async function PUT(request, { params }) {
         await prisma.notification.create({
           data: {
             userId: booking.clientId,
-            type: 'SYSTEM',
+            type: 'PUSH',
             subject: 'Points Awarded',
             content: { message: `You earned ${pointsToAward} points from your completed booking!` }
           }
