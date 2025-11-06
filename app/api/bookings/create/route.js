@@ -62,7 +62,7 @@ export async function POST(request) {
     const payment = await prisma.payment.create({
       data: {
         bookingId: booking.id,
-        phoneNumber,
+        phoneNumber: phoneNumber || '0700000000',
         amount: finalAmount,
         status: 'INITIATED',
         demoMode: true

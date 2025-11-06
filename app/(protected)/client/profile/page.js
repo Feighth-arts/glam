@@ -20,7 +20,11 @@ export default function ClientProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('/api/users/profile');
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      const res = await fetch('/api/users/profile', {
+        headers: { 'x-user-id': userId, 'x-user-role': userRole }
+      });
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
@@ -48,9 +52,15 @@ export default function ClientProfilePage() {
 
   const handleSave = async () => {
     try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
       const res = await fetch('/api/users/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': userId, 
+          'x-user-role': userRole 
+        },
         body: JSON.stringify(formData)
       });
       if (res.ok) {

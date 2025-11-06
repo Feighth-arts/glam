@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Gift, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import MpesaSimulation from '@/components/MpesaSimulation';
-import { sendBookingConfirmation } from '@/lib/email-service';
 
 export default function ClientServicesPage() {
   const router = useRouter();
@@ -50,8 +49,7 @@ export default function ClientServicesPage() {
   };
 
   const handleViewProfile = (providerId) => {
-    // In real app, navigate to provider profile
-    alert('Provider profile view coming soon!');
+    router.push(`/client/provider/${providerId}`);
   };
 
   return (
@@ -97,7 +95,6 @@ export default function ClientServicesPage() {
             >
               <option value="popular">Most Popular</option>
               <option value="rating">Highest Rated</option>
-              <option value="distance">Nearest</option>
               <option value="price">Lowest Price</option>
             </select>
           </div>
@@ -125,10 +122,9 @@ export default function ClientServicesPage() {
                         <span>{provider.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500" />
-                        <span>{provider.rating} ({provider.reviews} reviews)</span>
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        <span>{provider.rating.toFixed(1)} ({provider.reviews} reviews)</span>
                       </div>
-                      <span>{provider.distance} away</span>
                     </div>
                   </div>
                 </div>
@@ -156,8 +152,8 @@ export default function ClientServicesPage() {
                             <span>{service.duration} min</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-500" />
-                            <span>{service.ratings}</span>
+                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                            <span>{service.ratings.toFixed(1)}</span>
                           </div>
                         </div>
                       </div>
@@ -257,7 +253,6 @@ function BookingModal({ provider, service, onClose }) {
       if (res.ok) {
         const data = await res.json();
         setBookingData(data);
-        window.currentPaymentId = data.payment.id;
         setShowMpesa(true);
       } else {
         alert('Booking failed');
@@ -270,27 +265,9 @@ function BookingModal({ provider, service, onClose }) {
   };
 
   const handleMpesaSuccess = async (transactionId, phoneNumber) => {
-    try {
-      if (userProfile?.email) {
-        await sendBookingConfirmation(
-          {
-            id: bookingData.booking.id,
-            serviceName: service.name,
-            date: formData.date,
-            time: formData.time,
-            totalAmount: finalPrice
-          },
-          userProfile.email,
-          userProfile.name
-        );
-      }
-
-      alert('Payment successful! Booking confirmed.');
-      onClose();
-      window.location.reload();
-    } catch (error) {
-      console.error('Post-payment error:', error);
-    }
+    alert('Payment successful! Waiting for provider confirmation.');
+    onClose();
+    window.location.reload();
   };
 
   const handleMpesaFailure = (error) => {
@@ -303,6 +280,7 @@ function BookingModal({ provider, service, onClose }) {
         isOpen={showMpesa}
         onClose={() => setShowMpesa(false)}
         amount={finalPrice}
+        paymentId={bookingData?.payment?.id}
         onSuccess={handleMpesaSuccess}
         onFailure={handleMpesaFailure}
       />

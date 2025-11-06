@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X, Smartphone, CheckCircle, XCircle } from 'lucide-react';
 
-export default function MpesaSimulation({ isOpen, onClose, amount, onSuccess, onFailure }) {
+export default function MpesaSimulation({ isOpen, onClose, amount, paymentId, onSuccess, onFailure }) {
   const [step, setStep] = useState('phone'); // phone, waiting, success, failure
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countdown, setCountdown] = useState(60);
@@ -20,7 +20,7 @@ export default function MpesaSimulation({ isOpen, onClose, amount, onSuccess, on
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            paymentId: window.currentPaymentId,
+            paymentId: paymentId || window.currentPaymentId,
             phoneNumber,
             amount
           })

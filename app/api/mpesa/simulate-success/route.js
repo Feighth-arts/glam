@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendProviderBookingNotification } from '@/lib/email-service';
 
 export async function POST(request) {
   try {
@@ -7,7 +8,15 @@ export async function POST(request) {
 
     const payment = await prisma.payment.findFirst({
       where: { transactionId: checkoutRequestID },
-      include: { booking: true }
+      include: { 
+        booking: {
+          include: {
+            client: true,
+            provider: true,
+            service: true
+          }
+        }
+      }
     });
 
     if (!payment) {
@@ -29,6 +38,23 @@ export async function POST(request) {
       where: { id: payment.bookingId },
       data: { status: 'PAID' }
     });
+
+    // Send notification to provider
+    if (payment.booking.provider?.email) {
+      await sendProviderBookingNotification(
+        {
+          id: payment.booking.id,
+          clientName: payment.booking.client.name,
+          serviceName: payment.booking.service.name,
+          date: new Date(payment.booking.bookingDatetime).toLocaleDateString(),
+          time: new Date(payment.booking.bookingDatetime).toLocaleTimeString(),
+          totalAmount: payment.booking.amount,
+          location: payment.booking.location
+        },
+        payment.booking.provider.email,
+        payment.booking.provider.name
+      );
+    }
 
     return NextResponse.json({
       success: true,

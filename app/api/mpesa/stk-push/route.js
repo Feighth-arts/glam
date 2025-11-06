@@ -6,6 +6,10 @@ export async function POST(request) {
   try {
     const { paymentId, phoneNumber, amount } = await request.json();
 
+    if (!paymentId) {
+      return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 });
+    }
+
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
       include: {

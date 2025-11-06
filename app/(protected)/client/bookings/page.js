@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, Star, Search, Gift, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import MpesaSimulation from '@/components/MpesaSimulation';
-import { sendBookingConfirmation } from '@/lib/email-service';
 
 export default function ClientBookingsPage() {
   const router = useRouter();
@@ -54,31 +53,12 @@ export default function ClientBookingsPage() {
 
   const handlePayNow = (booking) => {
     setSelectedBooking(booking);
-    window.currentPaymentId = booking.payment?.id;
     setShowMpesa(true);
   };
 
   const handleMpesaSuccess = async (transactionId, phoneNumber) => {
-    try {
-      if (userProfile?.email) {
-        await sendBookingConfirmation(
-          {
-            id: selectedBooking.id,
-            serviceName: selectedBooking.service?.name,
-            date: new Date(selectedBooking.bookingDatetime).toLocaleDateString(),
-            time: new Date(selectedBooking.bookingDatetime).toLocaleTimeString(),
-            totalAmount: selectedBooking.amount
-          },
-          userProfile.email,
-          userProfile.name
-        );
-      }
-
-      alert('Payment successful!');
-      window.location.reload();
-    } catch (error) {
-      console.error('Payment error:', error);
-    }
+    alert('Payment successful!');
+    window.location.reload();
   };
 
   const handleMpesaFailure = (error) => {
@@ -251,6 +231,7 @@ export default function ClientBookingsPage() {
         isOpen={showMpesa}
         onClose={() => setShowMpesa(false)}
         amount={selectedBooking?.amount || 0}
+        paymentId={selectedBooking?.payment?.id}
         onSuccess={handleMpesaSuccess}
         onFailure={handleMpesaFailure}
       />
