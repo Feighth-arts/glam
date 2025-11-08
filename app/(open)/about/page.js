@@ -24,7 +24,7 @@ export default function AboutPage() {
             About <span className="text-rose-primary">Glamease</span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            We're revolutionizing the beauty industry by connecting talented service providers 
+            We&apos;re revolutionizing the beauty industry by connecting talented service providers 
             with clients who deserve exceptional care and convenience.
           </p>
         </div>
@@ -42,7 +42,7 @@ export default function AboutPage() {
                 loyalty through our innovative points system.
               </p>
               <p className="text-gray-600">
-                We're committed to supporting local beauty professionals by providing them with 
+                We&apos;re committed to supporting local beauty professionals by providing them with 
                 the tools and platform they need to grow their businesses and reach more clients.
               </p>
             </div>
@@ -132,7 +132,7 @@ export default function AboutPage() {
             Ready to Join Our Community?
           </h2>
           <p className="text-xl text-rose-100 mb-8 max-w-2xl mx-auto">
-            Whether you're looking for beauty services or want to offer them, 
+            Whether you&apos;re looking for beauty services or want to offer them, 
             Glamease is the perfect platform for you.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

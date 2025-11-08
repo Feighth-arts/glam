@@ -94,7 +94,7 @@ const ProviderDashboard = () => {
         {/* Today's Bookings */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Today's Bookings</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Today&apos;s Bookings</h2>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -163,7 +163,7 @@ const ProviderDashboard = () => {
       {/* Performance Overview */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">This Week's Performance</h2>
+          <h2 className="text-lg font-semibold text-gray-900">This Week&apos;s Performance</h2>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
