@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getUserId, getUserRole } from '@/lib/auth-helper';
 import { NextResponse } from 'next/server';
-import { sendBookingStatusUpdate } from '@/lib/email-service';
 
 export async function GET(request, { params }) {
   try {
@@ -81,21 +80,7 @@ export async function PUT(request, { params }) {
       }
     });
 
-    // Send confirmation email to client when provider confirms
-    if (status === 'CONFIRMED' && booking.status !== 'CONFIRMED' && updatedBooking.client?.email) {
-      await sendBookingStatusUpdate(
-        {
-          id: updatedBooking.id,
-          serviceName: updatedBooking.service.name,
-          date: new Date(updatedBooking.bookingDatetime).toLocaleDateString(),
-          time: new Date(updatedBooking.bookingDatetime).toLocaleTimeString(),
-          totalAmount: updatedBooking.amount
-        },
-        updatedBooking.client.email,
-        updatedBooking.client.name,
-        status
-      );
-    }
+    // Email notification handled client-side
 
     // Award points when booking is completed
     if (status === 'COMPLETED' && booking.status !== 'COMPLETED') {
