@@ -1,47 +1,84 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart, Download, TrendingUp, Users, Calendar, DollarSign, Star, FileText } from 'lucide-react';
-import { getPlatformStats, BOOKINGS, USERS, SERVICE_CATALOG } from '@/lib/normalized-data';
 
 export default function AdminReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [activeTab, setActiveTab] = useState('overview');
+  const [dashboardData, setDashboardData] = useState(null);
+  const [services, setServices] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const platformStats = getPlatformStats();
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    const headers = { 'x-user-id': userId, 'x-user-role': userRole };
+    
+    Promise.all([
+      fetch('/api/dashboard', { headers }).then(r => r.json()),
+      fetch('/api/services', { headers }).then(r => r.json()),
+      fetch('/api/admin/bookings', { headers }).then(r => r.json())
+    ]).then(([dashboard, servicesData, bookingsData]) => {
+      setDashboardData(dashboard);
+      setServices(servicesData);
+      setBookings(bookingsData);
+      setLoading(false);
+    });
+  }, []);
 
-  // Mock monthly data for charts
-  const monthlyData = [
-    { month: 'Aug', revenue: 185000, bookings: 234, users: 45, commission: 27750 },
-    { month: 'Sep', revenue: 210000, bookings: 267, users: 52, commission: 31500 },
-    { month: 'Oct', revenue: 195000, bookings: 245, users: 38, commission: 29250 },
-    { month: 'Nov', revenue: 245000, bookings: 298, users: 67, commission: 36750 },
-    { month: 'Dec', revenue: 220000, bookings: 276, users: 43, commission: 33000 },
-    { month: 'Jan', revenue: 265000, bookings: 312, users: 58, commission: 39750 }
-  ];
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 
-  const servicePerformance = SERVICE_CATALOG.map(service => {
-    const serviceBookings = BOOKINGS.filter(b => b.serviceId === service.id);
-    const revenue = serviceBookings.reduce((sum, b) => sum + b.price, 0);
+  const platformStats = {
+    totalRevenue: dashboardData?.totalRevenue || 0,
+    totalBookings: dashboardData?.totalBookings || 0,
+    totalUsers: dashboardData?.totalUsers || 0,
+    totalCommission: dashboardData?.totalCommission || 0,
+    totalProviders: dashboardData?.topProviders?.length || 0,
+    totalClients: dashboardData?.topClients?.length || 0,
+    avgBookingValue: dashboardData?.totalBookings > 0 ? Math.round(dashboardData.totalRevenue / dashboardData.totalBookings) : 0
+  };
+
+  // Calculate monthly data from bookings
+  const monthlyData = bookings.reduce((acc, booking) => {
+    const date = new Date(booking.date);
+    const monthKey = date.toLocaleString('en', { month: 'short' });
+    if (!acc[monthKey]) acc[monthKey] = { month: monthKey, revenue: 0, bookings: 0, commission: 0 };
+    acc[monthKey].revenue += booking.amount || 0;
+    acc[monthKey].bookings += 1;
+    acc[monthKey].commission += booking.commission || 0;
+    return acc;
+  }, {});
+  const monthlyDataArray = Object.values(monthlyData).slice(-6);
+
+  // Calculate service performance
+  const servicePerformance = services.map(service => {
+    const serviceBookings = bookings.filter(b => b.serviceId === service.id);
+    const revenue = serviceBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
     return {
-      ...service,
+      id: service.id,
+      name: service.name,
+      category: service.category,
       bookings: serviceBookings.length,
       revenue,
-      commission: serviceBookings.reduce((sum, b) => sum + b.commission, 0)
+      commission: revenue * 0.15
     };
-  }).sort((a, b) => b.revenue - a.revenue);
+  }).filter(s => s.bookings > 0).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
 
-  const providerPerformance = USERS.providers.map(provider => ({
-    ...provider,
-    bookings: BOOKINGS.filter(b => b.providerId === provider.id).length,
-    revenue: BOOKINGS.filter(b => b.providerId === provider.id).reduce((sum, b) => sum + b.providerEarning, 0),
-    commission: BOOKINGS.filter(b => b.providerId === provider.id).reduce((sum, b) => sum + b.commission, 0)
-  })).sort((a, b) => b.revenue - a.revenue);
+  const providerPerformance = dashboardData?.topProviders || [];
 
   const handleExport = (reportType) => {
-    console.log(`Exporting ${reportType} report for ${selectedPeriod}`);
-    // In real app, this would generate and download PDF/Excel
-    alert(`${reportType} report exported successfully!`);
+    import('@/lib/pdf-generator').then(({ generateAdminReport }) => {
+      const reportData = {
+        overview: { ...platformStats, activeBookings: dashboardData?.recentBookings?.length || 0 },
+        services: { servicePerformance },
+        providers: { topProviders: providerPerformance },
+        financial: { monthlyMetrics: monthlyDataArray },
+        comprehensive: { ...platformStats, monthlyData, servicePerformance, providerPerformance }
+      };
+      generateAdminReport(reportType, reportData[reportType] || reportData.comprehensive);
+    });
   };
 
   const generatePDFReport = (type) => {
@@ -49,7 +86,7 @@ export default function AdminReportsPage() {
       overview: platformStats,
       services: { servicePerformance },
       providers: { topProviders: providerPerformance },
-      financial: { monthlyMetrics: monthlyData }
+      financial: { monthlyMetrics: monthlyDataArray }
     };
 
     import('@/lib/pdf-generator').then(({ generateAdminReport }) => {
@@ -162,19 +199,19 @@ export default function AdminReportsPage() {
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {monthlyData.map((month) => (
+                  {monthlyDataArray.map((month) => (
                     <div key={month.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-4">
                         <span className="text-sm font-medium text-gray-700 w-12">{month.month}</span>
                         <div className="flex-1 bg-gray-200 rounded-full h-3 w-64">
                           <div
                             className="bg-rose-primary h-3 rounded-full transition-all duration-300"
-                            style={{ width: `${(month.revenue / Math.max(...monthlyData.map(m => m.revenue))) * 100}%` }}
+                            style={{ width: `${monthlyDataArray.length > 0 ? (month.revenue / Math.max(...monthlyDataArray.map(m => m.revenue))) * 100 : 0}%` }}
                           ></div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900">KES {month.revenue.toLocaleString()}</p>
+                        <p className="text-sm font-semibold text-gray-900">KES {Math.round(month.revenue).toLocaleString()}</p>
                         <p className="text-xs text-gray-500">{month.bookings} bookings</p>
                       </div>
                     </div>
@@ -212,6 +249,9 @@ export default function AdminReportsPage() {
                   Export Report
                 </button>
               </div>
+              {servicePerformance.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No service data available</p>
+              ) : (
               <div className="space-y-3">
                 {servicePerformance.map((service, index) => (
                   <div key={service.id} className="flex items-center justify-between p-4 border rounded-lg">
@@ -225,12 +265,13 @@ export default function AdminReportsPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">KES {service.revenue.toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">Commission: KES {service.commission.toLocaleString()}</p>
+                      <p className="font-semibold text-gray-900">KES {Math.round(service.revenue).toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Commission: KES {Math.round(service.commission).toLocaleString()}</p>
                     </div>
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
 
@@ -291,10 +332,10 @@ export default function AdminReportsPage() {
                 <div>
                   <h4 className="font-medium mb-3">Monthly Commission</h4>
                   <div className="space-y-2">
-                    {monthlyData.map((month) => (
+                    {monthlyDataArray.map((month) => (
                       <div key={month.month} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                         <span className="text-sm text-gray-600">{month.month}</span>
-                        <span className="font-medium">KES {month.commission.toLocaleString()}</span>
+                        <span className="font-medium">KES {Math.round(month.commission).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>

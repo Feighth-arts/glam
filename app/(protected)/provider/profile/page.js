@@ -40,29 +40,8 @@ function UpdateProfileForm({ profile, onClose, onUpdate }) {
       start: "09:00",
       end: "18:00"
     },
-    serviceAvailability: profile?.serviceAvailability || []
   });
   const [errors, setErrors] = useState({});
-  const [tempTimeSlot, setTempTimeSlot] = useState('');
-  const [selectedService, setSelectedService] = useState('');
-  
-  const [availableServices, setAvailableServices] = useState([]);
-  
-  useEffect(() => {
-    // Fetch available services for the form
-    const fetchServices = async () => {
-      try {
-        const response = await fetch('/api/services');
-        if (response.ok) {
-          const services = await response.json();
-          setAvailableServices(services.map(s => ({ id: s.id, name: s.name })));
-        }
-      } catch (err) {
-        console.error('Error fetching services:', err);
-      }
-    };
-    fetchServices();
-  }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const daysOfWeek = [
@@ -107,46 +86,6 @@ function UpdateProfileForm({ profile, onClose, onUpdate }) {
         ...prev.workingHours,
         [timeType]: value
       }
-    }));
-  };
-
-  const addServiceTimeSlot = () => {
-    if (!selectedService || !tempTimeSlot) return;
-    
-    const serviceData = availableServices.find(s => s.id === parseInt(selectedService));
-    if (!serviceData) return;
-
-    setFormData(prev => {
-      const existingServiceIndex = prev.serviceAvailability.findIndex(s => s.serviceId === parseInt(selectedService));
-      
-      if (existingServiceIndex >= 0) {
-        const updatedAvailability = [...prev.serviceAvailability];
-        if (!updatedAvailability[existingServiceIndex].timeSlots.includes(tempTimeSlot)) {
-          updatedAvailability[existingServiceIndex].timeSlots.push(tempTimeSlot);
-        }
-        return { ...prev, serviceAvailability: updatedAvailability };
-      } else {
-        return {
-          ...prev,
-          serviceAvailability: [
-            ...prev.serviceAvailability,
-            { serviceId: parseInt(selectedService), serviceName: serviceData.name, timeSlots: [tempTimeSlot] }
-          ]
-        };
-      }
-    });
-    
-    setTempTimeSlot('');
-  };
-
-  const removeServiceTimeSlot = (serviceId, timeSlot) => {
-    setFormData(prev => ({
-      ...prev,
-      serviceAvailability: prev.serviceAvailability.map(service => 
-        service.serviceId === serviceId
-          ? { ...service, timeSlots: service.timeSlots.filter(t => t !== timeSlot) }
-          : service
-      ).filter(service => service.timeSlots.length > 0)
     }));
   };
 
@@ -440,66 +379,6 @@ function UpdateProfileForm({ profile, onClose, onUpdate }) {
         )}
       </div>
 
-      {/* Service Time Slots Management */}
-      <div>
-        <label className="block text-sm font-medium mb-3" style={{ color: '#0A1014' }}>Service Time Slots</label>
-        
-        <div className="flex gap-2 mb-4">
-          <select
-            value={selectedService}
-            onChange={(e) => setSelectedService(e.target.value)}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent"
-            style={{ borderColor: '#E5E7EB', '--tw-ring-color': '#F43F5E' }}
-          >
-            <option value="">Select Service</option>
-            {availableServices.map(service => (
-              <option key={service.id} value={service.id}>{service.name}</option>
-            ))}
-          </select>
-          <input
-            type="time"
-            value={tempTimeSlot}
-            onChange={(e) => setTempTimeSlot(e.target.value)}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent"
-            style={{ borderColor: '#E5E7EB', '--tw-ring-color': '#F43F5E' }}
-          />
-          <button
-            type="button"
-            onClick={addServiceTimeSlot}
-            className="px-4 py-2 text-white rounded-lg hover:opacity-90"
-            style={{ backgroundColor: '#F43F5E' }}
-          >
-            Add
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {formData.serviceAvailability.map((service, index) => (
-            <div key={index} className="p-4 rounded-lg" style={{ backgroundColor: '#F7F7F7' }}>
-              <h4 className="font-medium mb-2" style={{ color: '#0A1014' }}>{service.serviceName}</h4>
-              <div className="flex flex-wrap gap-2">
-                {service.timeSlots.map((time, timeIndex) => (
-                  <span
-                    key={timeIndex}
-                    className="px-3 py-1 text-sm rounded-full flex items-center gap-2"
-                    style={{ backgroundColor: '#F43F5E', color: '#FFFFFF' }}
-                  >
-                    {time}
-                    <button
-                      type="button"
-                      onClick={() => removeServiceTimeSlot(service.serviceId, time)}
-                      className="hover:opacity-70"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       <div className="flex gap-3 pt-6 border-t" style={{ borderColor: 'rgba(244, 63, 94, 0.1)' }}>
         <button
           type="button"
@@ -537,6 +416,7 @@ export default function ProviderProfile({ profile: initialProfile = {} }) {
 
   useEffect(() => {
     fetchProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {

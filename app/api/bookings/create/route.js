@@ -35,6 +35,37 @@ export async function POST(request) {
     const maxDiscount = basePrice * MAX_POINTS_DISCOUNT;
 
     if (pointsToRedeem && userPoints && userPoints.currentPoints >= pointsToRedeem) {
+      // Check points earned from this specific provider
+      const providerBookings = await prisma.booking.findMany({
+        where: {
+          clientId: userId,
+          providerId,
+          status: 'COMPLETED'
+        },
+        select: { pointsEarned: true }
+      });
+      
+      const pointsFromProvider = providerBookings.reduce((sum, b) => sum + (b.pointsEarned || 0), 0);
+      
+      // Check points already redeemed with this provider
+      const redeemedWithProvider = await prisma.pointsTransaction.findMany({
+        where: {
+          userId,
+          type: 'REDEEMED',
+          description: { contains: providerId }
+        },
+        select: { points: true }
+      });
+      
+      const alreadyRedeemed = Math.abs(redeemedWithProvider.reduce((sum, t) => sum + t.points, 0));
+      const availableWithProvider = pointsFromProvider - alreadyRedeemed;
+      
+      if (pointsToRedeem > availableWithProvider) {
+        return NextResponse.json({ 
+          error: `You can only redeem ${availableWithProvider} points with this provider` 
+        }, { status: 400 });
+      }
+      
       pointsUsed = Math.min(pointsToRedeem, userPoints.currentPoints);
       discount = Math.min(pointsUsed, maxDiscount);
     }
@@ -62,7 +93,7 @@ export async function POST(request) {
     const payment = await prisma.payment.create({
       data: {
         bookingId: booking.id,
-        phoneNumber,
+        phoneNumber: phoneNumber || '0700000000',
         amount: finalAmount,
         status: 'INITIATED',
         demoMode: true
@@ -82,7 +113,7 @@ export async function POST(request) {
           points: -pointsUsed,
           source: 'BOOKING',
           referenceId: booking.id,
-          description: `Redeemed ${pointsUsed} points for booking`
+          description: `Redeemed ${pointsUsed} points with provider ${providerId}`
         }
       });
     }

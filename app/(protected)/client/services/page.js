@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Gift, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import MpesaSimulation from '@/components/MpesaSimulation';
 
 export default function ClientServicesPage() {
   const router = useRouter();
@@ -48,8 +49,7 @@ export default function ClientServicesPage() {
   };
 
   const handleViewProfile = (providerId) => {
-    // In real app, navigate to provider profile
-    alert('Provider profile view coming soon!');
+    router.push(`/client/provider/${providerId}`);
   };
 
   return (
@@ -95,7 +95,6 @@ export default function ClientServicesPage() {
             >
               <option value="popular">Most Popular</option>
               <option value="rating">Highest Rated</option>
-              <option value="distance">Nearest</option>
               <option value="price">Lowest Price</option>
             </select>
           </div>
@@ -123,10 +122,9 @@ export default function ClientServicesPage() {
                         <span>{provider.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500" />
-                        <span>{provider.rating} ({provider.reviews} reviews)</span>
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        <span>{provider.rating.toFixed(1)} ({provider.reviews} reviews)</span>
                       </div>
-                      <span>{provider.distance} away</span>
                     </div>
                   </div>
                 </div>
@@ -154,8 +152,8 @@ export default function ClientServicesPage() {
                             <span>{service.duration} min</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-500" />
-                            <span>{service.ratings}</span>
+                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                            <span>{service.ratings.toFixed(1)}</span>
                           </div>
                         </div>
                       </div>
@@ -208,23 +206,47 @@ function BookingModal({ provider, service, onClose }) {
     time: '',
     location: '',
     notes: '',
-    pointsToRedeem: 0,
-    phoneNumber: ''
+    pointsToRedeem: 0
   });
   const [loading, setLoading] = useState(false);
   const [userPoints, setUserPoints] = useState(0);
+  const [availablePoints, setAvailablePoints] = useState(0);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showMpesa, setShowMpesa] = useState(false);
+  const [bookingData, setBookingData] = useState(null);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
     const headers = { 'x-user-id': userId, 'x-user-role': userRole };
+    
     fetch('/api/users/profile', { headers })
       .then(res => res.json())
-      .then(data => setUserPoints(data.userPoints?.currentPoints || 0));
-  }, []);
+      .then(data => {
+        setUserProfile(data);
+        setUserPoints(data.userPoints?.currentPoints || 0);
+      });
+    
+    // Fetch provider-specific points
+    fetch('/api/bookings', { headers })
+      .then(res => res.json())
+      .then(bookings => {
+        const providerBookings = bookings.filter(b => 
+          b.providerId === provider.id && b.status === 'COMPLETED'
+        );
+        const earnedFromProvider = providerBookings.reduce((sum, b) => sum + (b.pointsEarned || 0), 0);
+        
+        // Get redeemed points with this provider
+        const redeemedBookings = bookings.filter(b => 
+          b.providerId === provider.id && b.status !== 'CANCELLED'
+        );
+        // Estimate redeemed (this is approximate, ideally fetch from transactions)
+        setAvailablePoints(earnedFromProvider);
+      });
+  }, [provider.id]);
 
   const maxDiscount = service.price * 0.30;
-  const maxPoints = Math.min(userPoints, maxDiscount);
+  const maxPoints = Math.min(availablePoints, maxDiscount);
   const finalPrice = service.price - Math.min(formData.pointsToRedeem, maxDiscount);
 
   const handleSubmit = async (e) => {
@@ -243,25 +265,16 @@ function BookingModal({ provider, service, onClose }) {
           bookingDatetime: `${formData.date}T${formData.time}`,
           location: formData.location,
           notes: formData.notes,
-          pointsToRedeem: formData.pointsToRedeem,
-          phoneNumber: formData.phoneNumber
+          pointsToRedeem: formData.pointsToRedeem
         })
       });
 
       if (res.ok) {
-        const { payment } = await res.json();
-        // Initiate M-Pesa
-        await fetch('/api/payments/mpesa', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentId: payment.id,
-            phoneNumber: formData.phoneNumber,
-            amount: finalPrice
-          })
-        });
-        alert('Booking created! Check your phone for M-Pesa prompt.');
-        onClose();
+        const data = await res.json();
+        setBookingData(data);
+        setShowMpesa(true);
+      } else {
+        alert('Booking failed');
       }
     } catch (error) {
       alert('Booking failed');
@@ -270,9 +283,28 @@ function BookingModal({ provider, service, onClose }) {
     }
   };
 
+  const handleMpesaSuccess = async (transactionId, phoneNumber) => {
+    alert('Payment successful! Waiting for provider confirmation.');
+    onClose();
+    window.location.reload();
+  };
+
+  const handleMpesaFailure = (error) => {
+    alert(`Payment failed: ${error}`);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+    <>
+      <MpesaSimulation
+        isOpen={showMpesa}
+        onClose={() => setShowMpesa(false)}
+        amount={finalPrice}
+        paymentId={bookingData?.payment?.id}
+        onSuccess={handleMpesaSuccess}
+        onFailure={handleMpesaFailure}
+      />
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Book {service.name}</h2>
         <p className="text-gray-600 mb-4">with {provider.name}</p>
         
@@ -294,17 +326,6 @@ function BookingModal({ provider, service, onClose }) {
               required
               value={formData.time}
               onChange={(e) => setFormData({...formData, time: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Phone Number (M-Pesa)</label>
-            <input
-              type="tel"
-              required
-              placeholder="254712345678"
-              value={formData.phoneNumber}
-              onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
               className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
@@ -338,7 +359,9 @@ function BookingModal({ provider, service, onClose }) {
               onChange={(e) => setFormData({...formData, pointsToRedeem: parseInt(e.target.value) || 0})}
               className="w-full px-3 py-2 border rounded-lg"
             />
-            <p className="text-sm text-gray-600 mt-1">You have {userPoints} points</p>
+            <p className="text-sm text-gray-600 mt-1">
+              {availablePoints} points available with this provider (Total: {userPoints})
+            </p>
           </div>
           <div className="border-t pt-4">
             <div className="flex justify-between mb-2">
@@ -375,5 +398,6 @@ function BookingModal({ provider, service, onClose }) {
         </form>
       </div>
     </div>
+    </>
   );
 }

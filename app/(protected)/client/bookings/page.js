@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Star, Search, Gift } from 'lucide-react';
+import { Calendar, Clock, MapPin, Star, Search, Gift, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import MpesaSimulation from '@/components/MpesaSimulation';
 
 export default function ClientBookingsPage() {
   const router = useRouter();
@@ -10,30 +11,95 @@ export default function ClientBookingsPage() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showMpesa, setShowMpesa] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
-    fetch('/api/bookings', {
-      headers: { 'x-user-id': userId, 'x-user-role': userRole }
-    }).then(r => r.json()).then(data => {
-      setBookings(Array.isArray(data) ? data : []);
-      setLoading(false);
-    }).catch(() => {
-      setBookings([]);
-      setLoading(false);
-    });
+    const headers = { 'x-user-id': userId, 'x-user-role': userRole };
+    
+    fetch('/api/bookings', { headers })
+      .then(r => r.json())
+      .then(data => {
+        setBookings(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setBookings([]);
+        setLoading(false);
+      });
+    
+    fetch('/api/users/profile', { headers })
+      .then(r => r.json())
+      .then(data => setUserProfile(data));
   }, []);
 
   const handleNewBooking = () => router.push('/client/services');
   const handleCancel = async (id) => {
     if (!confirm('Cancel this booking?')) return;
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
     await fetch(`/api/bookings/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
       body: JSON.stringify({ status: 'CANCELLED' })
     });
     setBookings(bookings.map(b => b.id === id ? {...b, status: 'CANCELLED'} : b));
+  };
+
+  const handlePayNow = (booking) => {
+    setSelectedBooking(booking);
+    setShowMpesa(true);
+  };
+
+  const handleMpesaSuccess = async (transactionId, phoneNumber) => {
+    alert('Payment successful!');
+    window.location.reload();
+  };
+
+  const handleMpesaFailure = (error) => {
+    alert(`Payment failed: ${error}`);
+  };
+
+  const handleReview = (booking) => {
+    setSelectedBooking(booking);
+    setReviewData({ rating: 5, comment: '' });
+    setShowReviewModal(true);
+  };
+
+  const submitReview = async () => {
+    try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': userId, 
+          'x-user-role': userRole 
+        },
+        body: JSON.stringify({
+          bookingId: selectedBooking.id,
+          rating: reviewData.rating,
+          comment: reviewData.comment
+        })
+      });
+
+      if (response.ok) {
+        alert('Review submitted successfully!');
+        setShowReviewModal(false);
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to submit review');
+      }
+    } catch (error) {
+      alert('Failed to submit review');
+    }
   };
 
   if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
@@ -130,16 +196,95 @@ export default function ClientBookingsPage() {
                   <p className="text-lg font-semibold text-gray-900">KES {parseFloat(booking.amount).toLocaleString()}</p>
                   <p className="text-sm text-green-600">+{booking.pointsEarned} points</p>
                 </div>
-                {['PAID', 'CONFIRMED'].includes(booking.status) && (
-                  <button onClick={() => handleCancel(booking.id)} className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50">
-                    Cancel
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {booking.status === 'PENDING_PAYMENT' && (
+                    <button 
+                      onClick={() => handlePayNow(booking)} 
+                      className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+                    >
+                      <CreditCard className="w-3 h-3" />
+                      Pay Now
+                    </button>
+                  )}
+                  {booking.status === 'COMPLETED' && !booking.review && (
+                    <button 
+                      onClick={() => handleReview(booking)} 
+                      className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center gap-1"
+                    >
+                      <Star className="w-3 h-3" />
+                      Rate
+                    </button>
+                  )}
+                  {['PAID', 'CONFIRMED'].includes(booking.status) && (
+                    <button onClick={() => handleCancel(booking.id)} className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50">
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      <MpesaSimulation
+        isOpen={showMpesa}
+        onClose={() => setShowMpesa(false)}
+        amount={selectedBooking?.amount || 0}
+        paymentId={selectedBooking?.payment?.id}
+        onSuccess={handleMpesaSuccess}
+        onFailure={handleMpesaFailure}
+      />
+
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">Rate Your Experience</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setReviewData({ ...reviewData, rating: star })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${star <= reviewData.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Comment (Optional)</label>
+                <textarea
+                  value={reviewData.comment}
+                  onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-primary focus:border-transparent"
+                  rows="4"
+                  placeholder="Share your experience..."
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitReview}
+                  className="flex-1 px-4 py-2 bg-rose-primary text-white rounded-lg hover:bg-rose-dark"
+                >
+                  Submit Review
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

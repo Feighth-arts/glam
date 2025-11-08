@@ -1,10 +1,27 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, Calendar, Gift, Star, CheckCircle, X } from 'lucide-react';
 
 export default function ClientNotificationsPage() {
-  const [notifications, setNotifications] = useState([
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch('/api/notifications', {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
+      setNotifications(Array.isArray(data) ? data : []);
+      setLoading(false);
+    }).catch(() => {
+      setNotifications([]);
+      setLoading(false);
+    });
+  }, []);
+
+  const [oldNotifications] = useState([
     {
       id: 1,
       type: 'booking',
@@ -72,7 +89,14 @@ export default function ClientNotificationsPage() {
     return notification.type === filter;
   });
 
-  const markAsRead = (id) => {
+  const markAsRead = async (id) => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
+      body: JSON.stringify({ action: 'markAsRead', notificationId: id })
+    });
     setNotifications(prev => 
       prev.map(notification => 
         notification.id === id ? { ...notification, read: true } : notification
@@ -80,15 +104,36 @@ export default function ClientNotificationsPage() {
     );
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
+      body: JSON.stringify({ action: 'markAllAsRead' })
+    });
     setNotifications(prev => 
       prev.map(notification => ({ ...notification, read: true }))
     );
   };
 
-  const deleteNotification = (id) => {
+  const deleteNotification = async (id) => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    await fetch('/api/notifications', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-user-id': userId, 'x-user-role': userRole },
+      body: JSON.stringify({ notificationId: id })
+    });
     setNotifications(prev => prev.filter(notification => notification.id !== id));
   };
+
+  const getIconComponent = (iconName) => {
+    const iconMap = { Calendar, Star, Gift, Bell };
+    return iconMap[iconName] || Bell;
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 
   const getActionButton = (notification) => {
     switch (notification.type) {
@@ -169,7 +214,7 @@ export default function ClientNotificationsPage() {
       <div className="space-y-4">
         {filteredNotifications.length > 0 ? (
           filteredNotifications.map((notification) => {
-            const Icon = notification.icon;
+            const Icon = getIconComponent(notification.icon);
             return (
               <div
                 key={notification.id}

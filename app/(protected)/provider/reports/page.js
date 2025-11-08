@@ -19,27 +19,51 @@ const ReportsPage = () => {
       const userId = localStorage.getItem('userId');
       const userRole = localStorage.getItem('userRole');
       const headers = { 'x-user-id': userId, 'x-user-role': userRole };
-      const [dashboardResponse, profileResponse, servicesResponse] = await Promise.all([
+      const [dashboardResponse, profileResponse, servicesResponse, bookingsResponse] = await Promise.all([
         fetch('/api/dashboard', { headers }),
         fetch('/api/users/profile', { headers }),
-        fetch('/api/provider/services', { headers })
+        fetch('/api/provider/services', { headers }),
+        fetch('/api/bookings', { headers })
       ]);
       
-      if (!dashboardResponse.ok || !profileResponse.ok || !servicesResponse.ok) {
+      if (!dashboardResponse.ok || !profileResponse.ok || !servicesResponse.ok || !bookingsResponse.ok) {
         throw new Error('Failed to fetch provider data');
       }
       
       const dashboardData = await dashboardResponse.json();
       const profileData = await profileResponse.json();
       const servicesData = await servicesResponse.json();
+      const bookingsData = await bookingsResponse.json();
+      
+      // Calculate top clients from bookings
+      const clientStats = {};
+      bookingsData.filter(b => b.status === 'COMPLETED').forEach(booking => {
+        const clientId = booking.clientId;
+        if (!clientStats[clientId]) {
+          clientStats[clientId] = {
+            name: booking.client?.name || 'Unknown',
+            bookings: 0,
+            totalSpent: 0,
+            lastVisit: booking.bookingDatetime
+          };
+        }
+        clientStats[clientId].bookings += 1;
+        clientStats[clientId].totalSpent += booking.amount || 0;
+        if (new Date(booking.bookingDatetime) > new Date(clientStats[clientId].lastVisit)) {
+          clientStats[clientId].lastVisit = booking.bookingDatetime;
+        }
+      });
+      const topClients = Object.values(clientStats).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 10);
       
       setProviderStats({
         totalBookings: dashboardData.totalBookings || 0,
         totalRevenue: dashboardData.totalRevenue || 0,
-        totalCommission: dashboardData.totalCommission || 0,
-        completedBookings: dashboardData.completedBookings || 0,
+        totalCommission: (dashboardData.totalRevenue || 0) * 0.15,
+        completedBookings: dashboardData.totalBookings || 0,
         rating: profileData.stats?.avgRating || 0,
-        services: servicesData || []
+        services: servicesData || [],
+        monthlyStats: dashboardData.monthlyStats || [],
+        topClients
       });
     } catch (err) {
       setError(err.message);
@@ -102,24 +126,29 @@ const ReportsPage = () => {
     
     const reportData = {
       earnings: {
-        monthlyEarnings: [
-          { month: 'Jan', bookings: providerStats.totalBookings || 0, revenue: providerStats.totalRevenue || 0, commission: providerStats.totalCommission || 0, netEarnings: (providerStats.totalRevenue || 0) - (providerStats.totalCommission || 0) },
-          { month: 'Dec', bookings: Math.floor((providerStats.totalBookings || 0) * 0.8), revenue: Math.floor((providerStats.totalRevenue || 0) * 0.8), commission: Math.floor((providerStats.totalCommission || 0) * 0.8), netEarnings: Math.floor(((providerStats.totalRevenue || 0) - (providerStats.totalCommission || 0)) * 0.8) }
-        ]
+        monthlyEarnings: (providerStats.monthlyStats || []).map(stat => ({
+          month: stat.month,
+          bookings: stat.bookings,
+          revenue: stat.revenue,
+          commission: stat.revenue * 0.15,
+          netEarnings: stat.revenue * 0.85
+        }))
       },
       services: {
         services: providerStats.services?.map(service => ({
           name: service.name,
-          bookings: service.totalBookings || 0,
-          revenue: (service.price || 0) * (service.totalBookings || 0),
-          rating: service.ratings || 0
+          bookings: service._count?.bookings || 0,
+          revenue: service.price || 0,
+          rating: service.avgRating || 0
         })) || []
       },
       clients: {
-        topClients: [
-          { name: 'Faith Kiplangat', bookings: 8, totalSpent: 28000, lastVisit: '2024-01-15' },
-          { name: 'Grace Mwangi', bookings: 6, totalSpent: 21000, lastVisit: '2024-01-12' }
-        ]
+        topClients: (providerStats.topClients || []).map(client => ({
+          name: client.name,
+          bookings: client.bookings,
+          totalSpent: client.totalSpent,
+          lastVisit: new Date(client.lastVisit).toLocaleDateString()
+        }))
       }
     };
     

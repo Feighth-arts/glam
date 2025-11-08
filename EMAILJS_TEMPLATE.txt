@@ -1,0 +1,154 @@
+===========================================
+EMAILJS TEMPLATE CONFIGURATION
+===========================================
+
+STEP 1: TEMPLATE SETTINGS
+--------------------------
+In EmailJS Template Settings, configure:
+
+Subject Line Field:
+{{subject}}
+
+From Name Field:
+{{from_name}}
+
+From Email:
+(Use your connected email service)
+
+
+STEP 2: TEMPLATE VARIABLES
+---------------------------
+Add these 6 variables in template settings:
+
+1. to_email (string)
+2. to_name (string)
+3. from_name (string)
+4. subject (string)
+5. message (string)
+6. details (string)
+
+
+STEP 3: HTML TEMPLATE
+----------------------
+Copy and paste this HTML into the template editor:
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0;
+            padding: 0;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .header { 
+            background: linear-gradient(135deg, #F43F5E 0%, #E11D48 100%); 
+            color: white; 
+            padding: 30px; 
+            text-align: center; 
+            border-radius: 10px 10px 0 0; 
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content { 
+            background: #ffffff; 
+            padding: 30px; 
+            border: 1px solid #e5e7eb; 
+            border-top: none;
+        }
+        .content p {
+            margin: 15px 0;
+        }
+        .details { 
+            background: #f7f7f7; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 20px 0; 
+            white-space: pre-line;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .footer { 
+            background: #f7f7f7; 
+            padding: 20px; 
+            text-align: center; 
+            border-radius: 0 0 10px 10px; 
+            font-size: 12px; 
+            color: #666; 
+            border: 1px solid #e5e7eb;
+            border-top: none;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Glamease</h1>
+        </div>
+        <div class="content">
+            <p>Hi {{to_name}},</p>
+            <p>{{message}}</p>
+            <div class="details">{{details}}</div>
+            <p>Thank you for using Glamease!</p>
+        </div>
+        <div class="footer">
+            <p><strong>Glamease</strong> - Your Beauty Services Platform</p>
+            <p>This email was sent to {{to_email}}</p>
+        </div>
+    </div>
+</body>
+</html>
+
+
+STEP 4: TEST EMAIL
+-------------------
+Send a test email with these values:
+
+to_email: your-email@example.com
+to_name: Test User
+from_name: Glamease
+subject: Test Email - Glamease
+message: This is a test email to verify the template is working correctly.
+details: Test Detail 1
+Test Detail 2
+Test Detail 3
+
+
+STEP 5: VERIFY
+--------------
+✓ Subject line shows: "Test Email - Glamease"
+✓ From name shows: "Glamease"
+✓ Email greeting shows: "Hi Test User,"
+✓ Message displays correctly
+✓ Details section is formatted
+✓ Footer shows recipient email
+
+
+===========================================
+QUICK REFERENCE
+===========================================
+
+Template Variables (6 total):
+1. to_email    → Recipient email
+2. to_name     → Recipient name
+3. from_name   → Sender name (Glamease)
+4. subject     → Email subject line
+5. message     → Main message content
+6. details     → Formatted details block
+
+Subject Field: {{subject}}
+From Name Field: {{from_name}}
+
+===========================================

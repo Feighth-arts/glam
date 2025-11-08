@@ -8,8 +8,7 @@ export default function AdminSupportPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Mock support tickets
-  const [tickets] = useState([
+  const defaultTickets = [
     {
       id: 'TKT-001',
       subject: 'Payment not processed',
@@ -46,10 +45,9 @@ export default function AdminSupportPage() {
       updatedAt: '2024-01-14T10:30:00Z',
       assignedTo: 'Customer Success'
     }
-  ]);
+  ];
 
-  // Mock disputes
-  const [disputes] = useState([
+  const defaultDisputes = [
     {
       id: 'DSP-001',
       title: 'Service not provided',
@@ -74,7 +72,23 @@ export default function AdminSupportPage() {
       createdAt: '2024-01-14T12:30:00Z',
       evidence: ['Payment receipt', 'Chat conversation']
     }
-  ]);
+  ];
+
+  const [tickets, setTickets] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adminTickets');
+      return saved ? JSON.parse(saved) : defaultTickets;
+    }
+    return defaultTickets;
+  });
+
+  const [disputes, setDisputes] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adminDisputes');
+      return saved ? JSON.parse(saved) : defaultDisputes;
+    }
+    return defaultDisputes;
+  });
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,13 +127,30 @@ export default function AdminSupportPage() {
   };
 
   const handleTicketAction = (ticketId, action) => {
-    console.log(`${action} ticket:`, ticketId);
-    // Backend integration point
+    const updatedTickets = tickets.map(ticket => {
+      if (ticket.id === ticketId) {
+        if (action === 'assign') return { ...ticket, status: 'in-progress' };
+        if (action === 'resolve') return { ...ticket, status: 'resolved', updatedAt: new Date().toISOString() };
+      }
+      return ticket;
+    });
+    setTickets(updatedTickets);
+    localStorage.setItem('adminTickets', JSON.stringify(updatedTickets));
+    alert(`Ticket ${action}d successfully!`);
   };
 
   const handleDisputeAction = (disputeId, action) => {
-    console.log(`${action} dispute:`, disputeId);
-    // Backend integration point
+    const updatedDisputes = disputes.map(dispute => {
+      if (dispute.id === disputeId) {
+        if (action === 'investigate') return { ...dispute, status: 'investigating' };
+        if (action === 'mediate') return { ...dispute, status: 'investigating' };
+        if (action === 'resolve') return { ...dispute, status: 'resolved' };
+      }
+      return dispute;
+    });
+    setDisputes(updatedDisputes);
+    localStorage.setItem('adminDisputes', JSON.stringify(updatedDisputes));
+    alert(`Dispute ${action}d successfully!`);
   };
 
   return (

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getUserId, getUserRole } from '@/lib/auth-helper';
 import { NextResponse } from 'next/server';
+import { sendBookingStatusUpdate } from '@/lib/email-service';
 
 export async function GET(request, { params }) {
   try {
@@ -9,7 +10,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {
@@ -40,7 +41,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { status } = body;
 
@@ -79,6 +80,63 @@ export async function PUT(request, { params }) {
         review: true
       }
     });
+
+    // Send confirmation email to client when provider confirms
+    if (status === 'CONFIRMED' && booking.status !== 'CONFIRMED' && updatedBooking.client?.email) {
+      await sendBookingStatusUpdate(
+        {
+          id: updatedBooking.id,
+          serviceName: updatedBooking.service.name,
+          date: new Date(updatedBooking.bookingDatetime).toLocaleDateString(),
+          time: new Date(updatedBooking.bookingDatetime).toLocaleTimeString(),
+          totalAmount: updatedBooking.amount
+        },
+        updatedBooking.client.email,
+        updatedBooking.client.name,
+        status
+      );
+    }
+
+    // Award points when booking is completed
+    if (status === 'COMPLETED' && booking.status !== 'COMPLETED') {
+      const pointsToAward = booking.pointsEarned || 0;
+      
+      if (pointsToAward > 0) {
+        await prisma.userPoints.update({
+          where: { userId: booking.clientId },
+          data: {
+            currentPoints: { increment: pointsToAward },
+            lifetimePoints: { increment: pointsToAward }
+          }
+        });
+
+        // Update tier based on lifetime points
+        const userPoints = await prisma.userPoints.findUnique({
+          where: { userId: booking.clientId }
+        });
+        
+        let newTier = 'BRONZE';
+        if (userPoints.lifetimePoints >= 5000) newTier = 'PLATINUM';
+        else if (userPoints.lifetimePoints >= 1000) newTier = 'GOLD';
+        
+        if (userPoints.tier !== newTier) {
+          await prisma.userPoints.update({
+            where: { userId: booking.clientId },
+            data: { tier: newTier }
+          });
+        }
+
+        // Create notification
+        await prisma.notification.create({
+          data: {
+            userId: booking.clientId,
+            type: 'PUSH',
+            subject: 'Points Awarded',
+            content: { message: `You earned ${pointsToAward} points from your completed booking!` }
+          }
+        });
+      }
+    }
 
     return NextResponse.json(updatedBooking);
   } catch (error) {

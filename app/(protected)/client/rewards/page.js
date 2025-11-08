@@ -9,7 +9,11 @@ export default function ClientRewardsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/users/profile').then(r => r.json()).then(data => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch('/api/users/profile', {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
       setProfile(data);
       setLoading(false);
     });
