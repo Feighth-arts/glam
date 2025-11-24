@@ -31,15 +31,55 @@ export default function AdminUsersPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleUserAction = (action, userId) => {
+  const handleUserAction = async (action, userId) => {
     if (action === 'view') {
       const user = allUsers.find(u => u.id === userId);
       setViewingUser(user);
-    } else if (action === 'edit') {
-      alert('Edit functionality: Navigate to user profile page');
-    } else if (action === 'delete') {
-      if (confirm('Are you sure you want to delete this user?')) {
-        alert('Delete functionality: Would call DELETE /api/admin/users/' + userId);
+    } else if (action === 'suspend') {
+      if (confirm('Are you sure you want to suspend this user?')) {
+        try {
+          const adminId = localStorage.getItem('userId');
+          const adminRole = localStorage.getItem('userRole');
+          const res = await fetch('/api/admin/users', {
+            method: 'PATCH',
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-user-id': adminId,
+              'x-user-role': adminRole
+            },
+            body: JSON.stringify({ targetUserId: userId, status: 'SUSPENDED' })
+          });
+          if (res.ok) {
+            alert('User suspended successfully');
+            window.location.reload();
+          } else {
+            alert('Failed to suspend user');
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      }
+    } else if (action === 'activate') {
+      try {
+        const adminId = localStorage.getItem('userId');
+        const adminRole = localStorage.getItem('userRole');
+        const res = await fetch('/api/admin/users', {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-user-id': adminId,
+            'x-user-role': adminRole
+          },
+          body: JSON.stringify({ targetUserId: userId, status: 'ACTIVE' })
+        });
+        if (res.ok) {
+          alert('User activated successfully');
+          window.location.reload();
+        } else {
+          alert('Failed to activate user');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
       }
     }
   };
@@ -191,20 +231,23 @@ export default function AdminUsersPage() {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleUserAction('edit', user.id)}
-                        className="text-gray-600 hover:text-gray-900 p-1"
-                        title="Edit User"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleUserAction('delete', user.id)}
-                        className="text-red-600 hover:text-red-900 p-1"
-                        title="Delete User"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {user.status === 'active' ? (
+                        <button
+                          onClick={() => handleUserAction('suspend', user.id)}
+                          className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                          title="Suspend User"
+                        >
+                          Suspend
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleUserAction('activate', user.id)}
+                          className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-xs"
+                          title="Activate User"
+                        >
+                          Activate
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

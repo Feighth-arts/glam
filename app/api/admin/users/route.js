@@ -83,3 +83,43 @@ export async function GET(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(request) {
+  try {
+    const userId = getUserId(request);
+    const role = getUserRole(request);
+
+    if (!userId || role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { targetUserId, status } = await request.json();
+
+    if (!['ACTIVE', 'SUSPENDED', 'INACTIVE'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: { status }
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: targetUserId,
+        type: 'PUSH',
+        subject: status === 'SUSPENDED' ? 'Account Suspended' : 'Account Status Updated',
+        content: { 
+          message: status === 'SUSPENDED' 
+            ? 'Your account has been suspended. Contact support for details.'
+            : `Your account status has been updated to ${status}.`
+        }
+      }
+    });
+
+    return NextResponse.json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error('Update user status error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

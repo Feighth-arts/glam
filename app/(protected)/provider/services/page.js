@@ -10,18 +10,33 @@ export default function ServicesPage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [availableServices, setAvailableServices] = useState([]);
 
   useEffect(() => {
-    const fetchProviderServices = async () => {
+    const fetchData = async () => {
       try {
         const userId = localStorage.getItem('userId');
         const userRole = localStorage.getItem('userRole');
-        const response = await fetch('/api/provider/services', {
+        
+        // Fetch provider's services
+        const providerRes = await fetch('/api/provider/services', {
           headers: { 'x-user-id': userId, 'x-user-role': userRole }
         });
-        if (!response.ok) throw new Error('Failed to fetch services');
-        const data = await response.json();
-        setServices(data);
+        if (!providerRes.ok) throw new Error('Failed to fetch services');
+        const providerData = await providerRes.json();
+        setServices(providerData);
+        
+        // Fetch all available services (Manicure & Pedicure)
+        const allRes = await fetch('/api/services', {
+          headers: { 'x-user-id': userId, 'x-user-role': userRole }
+        });
+        if (allRes.ok) {
+          const allData = await allRes.json();
+          // Filter to only show services not yet added by provider
+          const providerServiceIds = providerData.map(s => s.id);
+          const available = allData.filter(s => !providerServiceIds.includes(s.id));
+          setAvailableServices(available);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -29,7 +44,7 @@ export default function ServicesPage() {
       }
     };
 
-    fetchProviderServices();
+    fetchData();
   }, []);
   const [editingId, setEditingId] = useState(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -58,18 +73,25 @@ export default function ServicesPage() {
   ];
 
   const handleAddNew = () => {
+    if (availableServices.length === 0) {
+      alert('You have already added all available services (Manicure & Pedicure)');
+      return;
+    }
     setIsAddingNew(true);
+    const firstAvailable = availableServices[0];
     setNewService({ 
-      name: '', 
-      price: '', 
-      points: '', 
-      duration: '',
+      serviceId: firstAvailable.id,
+      name: firstAvailable.name, 
+      price: firstAvailable.basePrice, 
+      points: firstAvailable.points, 
+      duration: firstAvailable.duration,
       availability: { days: [], timeSlots: [] }
     });
   };
 
   const handleSaveNew = async () => {
-    if (!newService.name || !newService.price || !newService.points || !newService.duration) {
+    if (!newService.serviceId || !newService.price) {
+      alert('Please fill in all required fields');
       return;
     }
 
@@ -82,13 +104,19 @@ export default function ServicesPage() {
         body: JSON.stringify(newService)
       });
       
-      if (!response.ok) throw new Error('Failed to create service');
+      if (!response.ok) {
+        const data = await response.json();
+        alert(data.error || 'Failed to add service');
+        return;
+      }
       const createdService = await response.json();
       
       setServices(prev => [...prev, createdService]);
+      setAvailableServices(prev => prev.filter(s => s.id !== newService.serviceId));
       setIsAddingNew(false);
     } catch (err) {
       console.error('Error creating service:', err);
+      alert('Failed to add service');
     }
   };
 
@@ -400,13 +428,36 @@ export default function ServicesPage() {
         {isAddingNew && (
           <div className="bg-white rounded-lg shadow-md p-6 space-y-4 border-2 border-rose-primary">
             <div className="space-y-4">
-              <input
-                type="text"
-                value={newService.name}
-                onChange={(e) => setNewService(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
-                placeholder="Service name"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Service</label>
+                <select
+                  value={newService.serviceId}
+                  onChange={(e) => {
+                    const selected = availableServices.find(s => s.id === parseInt(e.target.value));
+                    if (selected) {
+                      setNewService({
+                        serviceId: selected.id,
+                        name: selected.name,
+                        price: selected.basePrice,
+                        points: selected.points,
+                        duration: selected.duration,
+                        availability: { days: [], timeSlots: [] }
+                      });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-primary"
+                >
+                  {availableServices.map(service => (
+                    <option key={service.id} value={service.id}>
+                      {service.name} (KES {service.basePrice})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
+                <strong>{newService.name}</strong> - Default: KES {newService.price}, {newService.points} points, {newService.duration} min
+              </div>
               
               <div className="grid grid-cols-3 gap-4">
                 <input

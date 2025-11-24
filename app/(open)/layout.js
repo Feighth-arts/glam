@@ -20,6 +20,7 @@ const greatVibes = Great_Vibes({
 });
 
 const roboto = Roboto({
+  weight: ["400", "700"],
   variable: "--font-roboto",
   subsets: ["latin"]
 });

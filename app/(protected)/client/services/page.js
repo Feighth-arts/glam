@@ -60,10 +60,6 @@ export default function ClientServicesPage() {
     setBookingModal({ provider, service });
   };
 
-  const handleViewProfile = (providerId) => {
-    router.push(`/client/provider/${providerId}`);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -140,12 +136,6 @@ export default function ClientServicesPage() {
                     </div>
                   </div>
                 </div>
-                <button 
-                  onClick={() => handleViewProfile(provider.id)}
-                  className="px-4 py-2 border border-rose-primary text-rose-primary rounded-lg hover:bg-rose-50 transition-colors"
-                >
-                  View Profile
-                </button>
               </div>
             </div>
 
@@ -296,6 +286,28 @@ function BookingModal({ provider, service, onClose }) {
   };
 
   const handleMpesaSuccess = async (transactionId, phoneNumber) => {
+    // Send provider notification email
+    if (provider?.email && bookingData) {
+      try {
+        const { sendProviderBookingNotification } = await import('@/lib/email-service');
+        await sendProviderBookingNotification(
+          {
+            id: bookingData.id,
+            clientName: userProfile?.name || 'Client',
+            serviceName: service.name,
+            date: formData.date,
+            time: formData.time,
+            totalAmount: finalPrice,
+            location: formData.location || 'Not specified'
+          },
+          provider.email,
+          provider.name
+        );
+      } catch (err) {
+        console.log('Email notification failed:', err);
+      }
+    }
+    
     alert('Payment successful! Waiting for provider confirmation.');
     onClose();
     window.location.reload();

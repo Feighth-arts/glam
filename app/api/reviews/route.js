@@ -47,6 +47,21 @@ export async function POST(request) {
       }
     });
 
+    // Create notification for provider
+    await prisma.notification.create({
+      data: {
+        userId: booking.providerId,
+        type: 'PUSH',
+        subject: 'New Review Received',
+        content: { 
+          message: `You received a ${rating}-star review from a client!`,
+          bookingId,
+          rating,
+          comment: comment || ''
+        }
+      }
+    });
+
     return NextResponse.json(review);
   } catch (error) {
     console.error('Review creation error:', error);

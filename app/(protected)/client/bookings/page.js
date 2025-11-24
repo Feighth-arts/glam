@@ -66,6 +66,28 @@ export default function ClientBookingsPage() {
   };
 
   const handleMpesaSuccess = async (transactionId, phoneNumber) => {
+    // Send provider notification email
+    if (selectedBooking?.provider?.email) {
+      try {
+        const { sendProviderBookingNotification } = await import('@/lib/email-service');
+        await sendProviderBookingNotification(
+          {
+            id: selectedBooking.id,
+            clientName: userProfile?.name || 'Client',
+            serviceName: selectedBooking.service?.name || 'Service',
+            date: new Date(selectedBooking.bookingDatetime).toLocaleDateString(),
+            time: new Date(selectedBooking.bookingDatetime).toLocaleTimeString(),
+            totalAmount: selectedBooking.amount,
+            location: selectedBooking.location || 'Not specified'
+          },
+          selectedBooking.provider.email,
+          selectedBooking.provider.name
+        );
+      } catch (err) {
+        console.log('Email notification failed:', err);
+      }
+    }
+    
     clearCache('client-bookings');
     clearCache('client-dashboard');
     clearCache('client-services');
@@ -106,6 +128,22 @@ export default function ClientBookingsPage() {
       });
 
       if (response.ok) {
+        // Send provider email notification
+        if (selectedBooking?.provider?.email) {
+          try {
+            const { sendReviewNotification } = await import('@/lib/email-service');
+            await sendReviewNotification(
+              selectedBooking.provider.email,
+              selectedBooking.provider.name,
+              userProfile?.name || 'Client',
+              reviewData.rating,
+              reviewData.comment
+            );
+          } catch (err) {
+            console.log('Email notification failed:', err);
+          }
+        }
+        
         clearCache('client-bookings');
         clearCache('client-dashboard');
         clearCache('provider-bookings');

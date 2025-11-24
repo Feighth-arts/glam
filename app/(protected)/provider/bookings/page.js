@@ -116,6 +116,29 @@ const ProviderBookings = () => {
       });
       if (!response.ok) throw new Error('Failed to update booking');
       
+      const updatedBooking = await response.json();
+      
+      // Send client email when booking is confirmed
+      if (newStatus === 'CONFIRMED' && updatedBooking.client?.email) {
+        try {
+          const { sendBookingStatusUpdate } = await import('@/lib/email-service');
+          await sendBookingStatusUpdate(
+            {
+              id: updatedBooking.id,
+              serviceName: updatedBooking.service?.name || 'Service',
+              date: new Date(updatedBooking.bookingDatetime).toLocaleDateString(),
+              time: new Date(updatedBooking.bookingDatetime).toLocaleTimeString(),
+              totalAmount: updatedBooking.amount
+            },
+            updatedBooking.client.email,
+            updatedBooking.client.name,
+            'CONFIRMED'
+          );
+        } catch (err) {
+          console.log('Email notification failed:', err);
+        }
+      }
+      
       // Refresh bookings
       const updatedBookings = bookings.map(booking => 
         booking.id === id ? { ...booking, status: newStatus } : booking

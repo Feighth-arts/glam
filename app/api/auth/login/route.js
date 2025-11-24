@@ -14,6 +14,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    if (user.status === 'SUSPENDED') {
+      return NextResponse.json({ error: 'Your account has been suspended. Contact support.' }, { status: 403 });
+    }
+
+    if (user.status === 'INACTIVE') {
+      return NextResponse.json({ error: 'Your account is inactive. Contact support.' }, { status: 403 });
+    }
+
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {

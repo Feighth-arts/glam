@@ -11,7 +11,7 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const categories = ["All", "Hair", "Makeup", "Nails", "Skincare", "Massage"];
+  const categories = ["All", "Nails"];
 
   useEffect(() => {
     const fetchServices = async () => {
