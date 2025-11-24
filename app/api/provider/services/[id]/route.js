@@ -13,6 +13,11 @@ export async function PUT(request, { params }) {
     const { id } = await params;
     const { name, price, points, duration, availability } = await request.json();
 
+    // Only allow Manicure (1) or Pedicure (2)
+    if (![1, 2].includes(parseInt(id))) {
+      return NextResponse.json({ error: 'Only Manicure and Pedicure services are allowed' }, { status: 400 });
+    }
+
     // Update the provider service relationship
     const providerService = await prisma.providerService.update({
       where: { 
@@ -87,6 +92,11 @@ export async function DELETE(request, { params }) {
     }
 
     const { id } = await params;
+
+    // Only allow Manicure (1) or Pedicure (2)
+    if (![1, 2].includes(parseInt(id))) {
+      return NextResponse.json({ error: 'Only Manicure and Pedicure services are allowed' }, { status: 400 });
+    }
 
     // Remove the provider service relationship
     await prisma.providerService.delete({

@@ -7,6 +7,9 @@ export async function GET() {
       where: { role: 'PROVIDER' },
       include: {
         providerServices: {
+          where: {
+            serviceId: { in: [1, 2] } // Only Manicure and Pedicure
+          },
           include: {
             service: {
               include: {

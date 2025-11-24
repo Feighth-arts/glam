@@ -3,14 +3,23 @@
 import { useState, useEffect } from 'react';
 import { Calendar, DollarSign, Users, Star, TrendingUp, Clock, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCache } from '@/lib/cache-context';
 
 const ProviderDashboard = () => {
   const router = useRouter();
+  const { getCached, setCache } = useCache();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const cached = getCached('provider-dashboard');
+    if (cached) {
+      setDashboardData(cached);
+      setLoading(false);
+      return;
+    }
+
     const fetchDashboardData = async () => {
       try {
         const userId = localStorage.getItem('userId');
@@ -21,6 +30,7 @@ const ProviderDashboard = () => {
         if (!response.ok) throw new Error('Failed to fetch dashboard data');
         const data = await response.json();
         setDashboardData(data);
+        setCache('provider-dashboard', data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -29,7 +39,7 @@ const ProviderDashboard = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [getCached, setCache]);
 
   const handleViewSchedule = () => router.push('/provider/bookings');
   const handleViewReports = () => router.push('/provider/reports');

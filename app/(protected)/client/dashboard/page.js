@@ -3,14 +3,24 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Star, TrendingUp, Clock, MapPin, Gift } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCache } from '@/lib/cache-context';
 
 const ClientDashboard = () => {
   const router = useRouter();
+  const { getCached, setCache } = useCache();
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const cached = getCached('client-dashboard');
+    if (cached) {
+      setProfile(cached.profile);
+      setBookings(cached.bookings);
+      setLoading(false);
+      return;
+    }
+
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
     const headers = { 'x-user-id': userId, 'x-user-role': userRole };
@@ -20,9 +30,10 @@ const ClientDashboard = () => {
     ]).then(([profileData, bookingsData]) => {
       setProfile(profileData);
       setBookings(bookingsData);
+      setCache('client-dashboard', { profile: profileData, bookings: bookingsData });
       setLoading(false);
     });
-  }, []);
+  }, [getCached, setCache]);
 
   if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 

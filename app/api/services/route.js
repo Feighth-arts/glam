@@ -7,7 +7,10 @@ export async function GET(request) {
     const category = searchParams.get('category');
     const status = searchParams.get('status') || 'ACTIVE';
 
-    const where = { status };
+    const where = { 
+      status,
+      id: { in: [1, 2] } // Only Manicure and Pedicure
+    };
     if (category && category !== 'all') {
       where.category = { name: category };
     }

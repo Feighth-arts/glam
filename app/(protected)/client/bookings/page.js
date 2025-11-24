@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, Star, Search, Gift, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import MpesaSimulation from '@/components/MpesaSimulation';
+import { useCache } from '@/lib/cache-context';
 
 export default function ClientBookingsPage() {
   const router = useRouter();
+  const { getCached, setCache, clearCache } = useCache();
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,25 +20,32 @@ export default function ClientBookingsPage() {
   const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
 
   useEffect(() => {
+    const cached = getCached('client-bookings');
+    if (cached) {
+      setBookings(cached.bookings);
+      setUserProfile(cached.profile);
+      setLoading(false);
+      return;
+    }
+
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
     const headers = { 'x-user-id': userId, 'x-user-role': userRole };
     
-    fetch('/api/bookings', { headers })
-      .then(r => r.json())
-      .then(data => {
-        setBookings(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setBookings([]);
-        setLoading(false);
-      });
-    
-    fetch('/api/users/profile', { headers })
-      .then(r => r.json())
-      .then(data => setUserProfile(data));
-  }, []);
+    Promise.all([
+      fetch('/api/bookings', { headers }).then(r => r.json()),
+      fetch('/api/users/profile', { headers }).then(r => r.json())
+    ]).then(([bookingsData, profileData]) => {
+      const bookingsArray = Array.isArray(bookingsData) ? bookingsData : [];
+      setBookings(bookingsArray);
+      setUserProfile(profileData);
+      setCache('client-bookings', { bookings: bookingsArray, profile: profileData });
+      setLoading(false);
+    }).catch(() => {
+      setBookings([]);
+      setLoading(false);
+    });
+  }, [getCached, setCache]);
 
   const handleNewBooking = () => router.push('/client/services');
   const handleCancel = async (id) => {
@@ -57,6 +66,13 @@ export default function ClientBookingsPage() {
   };
 
   const handleMpesaSuccess = async (transactionId, phoneNumber) => {
+    clearCache('client-bookings');
+    clearCache('client-dashboard');
+    clearCache('client-services');
+    clearCache('provider-bookings');
+    clearCache('provider-dashboard');
+    clearCache('admin-bookings');
+    clearCache('admin-dashboard');
     alert('Payment successful!');
     window.location.reload();
   };
@@ -90,6 +106,10 @@ export default function ClientBookingsPage() {
       });
 
       if (response.ok) {
+        clearCache('client-bookings');
+        clearCache('client-dashboard');
+        clearCache('provider-bookings');
+        clearCache('provider-dashboard');
         alert('Review submitted successfully!');
         setShowReviewModal(false);
         window.location.reload();

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Search, Filter, Eye, DollarSign, Clock, MapPin } from 'lucide-react';
+import { useCache } from '@/lib/cache-context';
 
 export default function AdminBookingsPage() {
+  const { getCached, setCache } = useCache();
   const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -12,15 +14,24 @@ export default function AdminBookingsPage() {
   const [viewingBooking, setViewingBooking] = useState(null);
 
   useEffect(() => {
+    const cached = getCached('admin-bookings');
+    if (cached) {
+      setBookings(cached);
+      setLoading(false);
+      return;
+    }
+
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
     fetch('/api/admin/bookings', {
       headers: { 'x-user-id': userId, 'x-user-role': userRole }
     }).then(r => r.json()).then(data => {
-      setBookings(Array.isArray(data) ? data : []);
+      const bookingsArray = Array.isArray(data) ? data : [];
+      setBookings(bookingsArray);
+      setCache('admin-bookings', bookingsArray);
       setLoading(false);
     });
-  }, []);
+  }, [getCached, setCache]);
 
   if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 

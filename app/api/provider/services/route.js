@@ -11,7 +11,10 @@ export async function GET(request) {
     }
 
     const providerServices = await prisma.providerService.findMany({
-      where: { providerId: userId },
+      where: { 
+        providerId: userId,
+        serviceId: { in: [1, 2] } // Only Manicure and Pedicure
+      },
       include: {
         service: {
           include: {
@@ -67,6 +70,11 @@ export async function POST(request) {
 
     const { name, price, points, duration, availability, categoryId, serviceId } = await request.json();
 
+    // Only allow Manicure (1) or Pedicure (2)
+    if (serviceId && ![1, 2].includes(parseInt(serviceId))) {
+      return NextResponse.json({ error: 'Only Manicure and Pedicure services are allowed' }, { status: 400 });
+    }
+
     if (serviceId) {
       // Adding existing service to provider
       const providerService = await prisma.providerService.create({
@@ -98,41 +106,8 @@ export async function POST(request) {
         category: providerService.service.category?.name
       });
     } else {
-      // Create new service and add to provider
-      const service = await prisma.service.create({
-        data: {
-          name,
-          basePrice: parseFloat(price),
-          points: parseInt(points),
-          duration: parseInt(duration),
-          categoryId: categoryId || 1
-        },
-        include: {
-          category: true
-        }
-      });
-
-      const providerService = await prisma.providerService.create({
-        data: {
-          providerId: userId,
-          serviceId: service.id,
-          customPrice: parseFloat(price),
-          customPoints: parseInt(points),
-          availability: availability || { days: [], timeSlots: [] }
-        }
-      });
-
-      return NextResponse.json({
-        id: service.id,
-        name: service.name,
-        price: parseFloat(price),
-        points: service.points,
-        duration: service.duration,
-        ratings: 0,
-        totalRatings: 0,
-        availability: availability || { days: [], timeSlots: [] },
-        category: service.category?.name
-      });
+      // Prevent creating new services - only Manicure and Pedicure allowed
+      return NextResponse.json({ error: 'Only Manicure and Pedicure services are allowed. Please select from existing services.' }, { status: 400 });
     }
   } catch (error) {
     console.error('Error creating service:', error);

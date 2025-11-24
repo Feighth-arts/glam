@@ -14,6 +14,11 @@ export async function POST(request) {
 
     const { providerId, serviceId, bookingDatetime, location, notes, pointsToRedeem, phoneNumber } = await request.json();
 
+    // Only allow Manicure (1) or Pedicure (2)
+    if (![1, 2].includes(parseInt(serviceId))) {
+      return NextResponse.json({ error: 'Only Manicure and Pedicure services are available' }, { status: 400 });
+    }
+
     const providerService = await prisma.providerService.findUnique({
       where: { providerId_serviceId: { providerId, serviceId: parseInt(serviceId) } },
       include: { service: true }

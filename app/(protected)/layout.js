@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { CacheProvider } from '@/lib/cache-context';
 
 export default function ProtectedLayout({ children }) {
   const router = useRouter();
@@ -28,5 +29,5 @@ export default function ProtectedLayout({ children }) {
     }
   }, [pathname, router]);
 
-  return <>{children}</>;
+  return <CacheProvider>{children}</CacheProvider>;
 }

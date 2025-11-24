@@ -36,10 +36,10 @@ export default function LoginPage() {
       const roleMap = {
         'ADMIN': '/admin/dashboard',
         'PROVIDER': '/provider/dashboard',
-        'CLIENT': '/client/dashboard'
+        'CLIENT': '/client/services'
       };
       
-      router.push(roleMap[data.role] || '/client/dashboard');
+      router.push(roleMap[data.role] || '/client/services');
     } catch (err) {
       setError('Network error. Please try again.');
       setLoading(false);

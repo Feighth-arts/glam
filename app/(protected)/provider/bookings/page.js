@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Search, Filter, Calendar, Clock, User, Star, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { useCache } from '@/lib/cache-context';
 
 const ProviderBookings = () => {
+  const { getCached, setCache, clearCache } = useCache();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -12,6 +14,13 @@ const ProviderBookings = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const cached = getCached('provider-bookings');
+    if (cached) {
+      setBookings(cached);
+      setLoading(false);
+      return;
+    }
+
     const fetchBookings = async () => {
       try {
         const userId = localStorage.getItem('userId');
@@ -21,7 +30,9 @@ const ProviderBookings = () => {
         });
         if (!response.ok) throw new Error('Failed to fetch bookings');
         const data = await response.json();
-        setBookings(Array.isArray(data) ? data : []);
+        const bookingsArray = Array.isArray(data) ? data : [];
+        setBookings(bookingsArray);
+        setCache('provider-bookings', bookingsArray);
       } catch (err) {
         setError(err.message);
         setBookings([]);
@@ -31,7 +42,7 @@ const ProviderBookings = () => {
     };
 
     fetchBookings();
-  }, []);
+  }, [getCached, setCache]);
 
   const filteredBookings = bookings.filter(booking => {
     const clientName = booking.client?.name || '';
@@ -110,6 +121,12 @@ const ProviderBookings = () => {
         booking.id === id ? { ...booking, status: newStatus } : booking
       );
       setBookings(updatedBookings);
+      clearCache('provider-bookings');
+      clearCache('provider-dashboard');
+      clearCache('client-bookings');
+      clearCache('client-dashboard');
+      clearCache('admin-bookings');
+      clearCache('admin-dashboard');
     } catch (err) {
       alert('Failed to update booking: ' + err.message);
     }
@@ -135,6 +152,12 @@ const ProviderBookings = () => {
         b.id === booking.id ? { ...b, status: 'PAID' } : b
       );
       setBookings(updatedBookings);
+      clearCache('provider-bookings');
+      clearCache('provider-dashboard');
+      clearCache('client-bookings');
+      clearCache('client-dashboard');
+      clearCache('admin-bookings');
+      clearCache('admin-dashboard');
       alert('Payment verified! You can now confirm the booking.');
     } catch (err) {
       alert('Failed to verify payment: ' + err.message);

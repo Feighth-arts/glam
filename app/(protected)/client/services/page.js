@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Clock, Gift, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import MpesaSimulation from '@/components/MpesaSimulation';
+import { useCache } from '@/lib/cache-context';
 
 export default function ClientServicesPage() {
   const router = useRouter();
+  const { getCached, setCache } = useCache();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
@@ -16,6 +18,14 @@ export default function ClientServicesPage() {
   const [bookingModal, setBookingModal] = useState(null);
 
   useEffect(() => {
+    const cached = getCached('client-services');
+    if (cached) {
+      setProviders(cached.providers);
+      setCategories(cached.categories);
+      setLoading(false);
+      return;
+    }
+
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
     const headers = { 'x-user-id': userId, 'x-user-role': userRole };
@@ -23,10 +33,12 @@ export default function ClientServicesPage() {
       setProviders(data);
       const allCategories = new Set();
       data.forEach(p => p.services.forEach(s => s.category && allCategories.add(s.category)));
-      setCategories(['all', ...Array.from(allCategories)]);
+      const cats = ['all', ...Array.from(allCategories)];
+      setCategories(cats);
+      setCache('client-services', { providers: data, categories: cats });
       setLoading(false);
     });
-  }, []);
+  }, [getCached, setCache]);
 
   if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 

@@ -2,21 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { Users, Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle, Clock, Star } from "lucide-react";
+import { useCache } from '@/lib/cache-context';
 
 const AdminDashboard = () => {
+  const { getCached, setCache } = useCache();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const cached = getCached('admin-dashboard');
+    if (cached) {
+      setDashboardData(cached);
+      setLoading(false);
+      return;
+    }
+
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
     fetch('/api/dashboard', {
       headers: { 'x-user-id': userId, 'x-user-role': userRole }
     }).then(r => r.json()).then(data => {
       setDashboardData(data);
+      setCache('admin-dashboard', data);
       setLoading(false);
     });
-  }, []);
+  }, [getCached, setCache]);
 
   if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 

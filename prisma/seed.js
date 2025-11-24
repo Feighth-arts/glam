@@ -8,80 +8,38 @@ async function main() {
   const hashedPassword = await bcrypt.hash('password123', 10);
 
   // Create service categories
-  const categories = await Promise.all([
-    prisma.serviceCategory.upsert({
-      where: { name: 'Hair' },
-      update: {},
-      create: { name: 'Hair', description: 'Hair styling and treatments', sortOrder: 1 }
-    }),
-    prisma.serviceCategory.upsert({
-      where: { name: 'Makeup' },
-      update: {},
-      create: { name: 'Makeup', description: 'Professional makeup services', sortOrder: 2 }
-    }),
-    prisma.serviceCategory.upsert({
-      where: { name: 'Nails' },
-      update: {},
-      create: { name: 'Nails', description: 'Nail care and art', sortOrder: 3 }
-    }),
-    prisma.serviceCategory.upsert({
-      where: { name: 'Skincare' },
-      update: {},
-      create: { name: 'Skincare', description: 'Facial and skin treatments', sortOrder: 4 }
-    })
-  ]);
+  const nailsCategory = await prisma.serviceCategory.upsert({
+    where: { name: 'Nails' },
+    update: {},
+    create: { name: 'Nails', description: 'Manicure and Pedicure services', sortOrder: 1 }
+  });
 
-  // Create services
-  const services = await Promise.all([
-    prisma.service.upsert({
-      where: { id: 1 },
-      update: {},
-      create: {
-        name: 'Hair Styling',
-        categoryId: categories[0].id,
-        basePrice: 3500,
-        duration: 90,
-        points: 35,
-        description: 'Professional hair styling and treatment'
-      }
-    }),
-    prisma.service.upsert({
-      where: { id: 2 },
-      update: {},
-      create: {
-        name: 'Makeup Application',
-        categoryId: categories[1].id,
-        basePrice: 2800,
-        duration: 60,
-        points: 28,
-        description: 'Professional makeup application'
-      }
-    }),
-    prisma.service.upsert({
-      where: { id: 3 },
-      update: {},
-      create: {
-        name: 'Nail Art',
-        categoryId: categories[2].id,
-        basePrice: 1500,
-        duration: 45,
-        points: 15,
-        description: 'Creative nail art and manicure'
-      }
-    }),
-    prisma.service.upsert({
-      where: { id: 4 },
-      update: {},
-      create: {
-        name: 'Facial Treatment',
-        categoryId: categories[3].id,
-        basePrice: 2200,
-        duration: 75,
-        points: 22,
-        description: 'Deep cleansing facial treatment'
-      }
-    })
-  ]);
+  // Create services - Manicure and Pedicure only
+  const manicure = await prisma.service.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      name: 'Manicure',
+      categoryId: nailsCategory.id,
+      basePrice: 1500,
+      duration: 45,
+      points: 15,
+      description: 'Professional manicure with nail shaping, cuticle care, and polish'
+    }
+  });
+
+  const pedicure = await prisma.service.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      name: 'Pedicure',
+      categoryId: nailsCategory.id,
+      basePrice: 2000,
+      duration: 60,
+      points: 20,
+      description: 'Complete pedicure with foot soak, exfoliation, and polish'
+    }
+  });
 
   // Create users
   const admin = await prisma.user.upsert({
@@ -161,7 +119,7 @@ async function main() {
     create: {
       providerId: 'prov_001',
       serviceId: 1,
-      customPrice: 3500
+      customPrice: 1500
     }
   });
 
@@ -171,7 +129,17 @@ async function main() {
     create: {
       providerId: 'prov_001',
       serviceId: 2,
-      customPrice: 2800
+      customPrice: 2000
+    }
+  });
+
+  await prisma.providerService.upsert({
+    where: { providerId_serviceId: { providerId: 'prov_002', serviceId: 1 } },
+    update: {},
+    create: {
+      providerId: 'prov_002',
+      serviceId: 1,
+      customPrice: 1500
     }
   });
 
@@ -181,17 +149,7 @@ async function main() {
     create: {
       providerId: 'prov_002',
       serviceId: 2,
-      customPrice: 2800
-    }
-  });
-
-  await prisma.providerService.upsert({
-    where: { providerId_serviceId: { providerId: 'prov_002', serviceId: 3 } },
-    update: {},
-    create: {
-      providerId: 'prov_002',
-      serviceId: 3,
-      customPrice: 1500
+      customPrice: 2000
     }
   });
 
@@ -229,10 +187,10 @@ async function main() {
       serviceId: 1,
       bookingDatetime: new Date('2024-01-15T10:00:00Z'),
       status: 'COMPLETED',
-      amount: 3500,
-      commission: 525,
-      providerEarning: 2975,
-      pointsEarned: 35,
+      amount: 1500,
+      commission: 225,
+      providerEarning: 1275,
+      pointsEarned: 15,
       location: 'Westlands, Nairobi'
     }
   });
@@ -247,10 +205,10 @@ async function main() {
       serviceId: 2,
       bookingDatetime: new Date('2024-01-20T14:30:00Z'),
       status: 'CONFIRMED',
-      amount: 2800,
-      commission: 420,
-      providerEarning: 2380,
-      pointsEarned: 28,
+      amount: 2000,
+      commission: 300,
+      providerEarning: 1700,
+      pointsEarned: 20,
       location: 'CBD, Nairobi'
     }
   });
