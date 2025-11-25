@@ -19,25 +19,27 @@ const ReportsPage = () => {
       const userId = localStorage.getItem('userId');
       const userRole = localStorage.getItem('userRole');
       const headers = { 'x-user-id': userId, 'x-user-role': userRole };
-      const [dashboardResponse, profileResponse, servicesResponse, bookingsResponse] = await Promise.all([
+      
+      const [dashboardResponse, servicesResponse, bookingsResponse] = await Promise.all([
         fetch('/api/dashboard', { headers }),
-        fetch('/api/users/profile', { headers }),
         fetch('/api/provider/services', { headers }),
         fetch('/api/bookings', { headers })
       ]);
       
-      if (!dashboardResponse.ok || !profileResponse.ok || !servicesResponse.ok || !bookingsResponse.ok) {
+      if (!dashboardResponse.ok || !servicesResponse.ok || !bookingsResponse.ok) {
         throw new Error('Failed to fetch provider data');
       }
       
       const dashboardData = await dashboardResponse.json();
-      const profileData = await profileResponse.json();
       const servicesData = await servicesResponse.json();
       const bookingsData = await bookingsResponse.json();
       
-      // Calculate top clients from bookings
+      // Calculate top clients and service stats from bookings
       const clientStats = {};
+      const serviceStats = {};
+      
       bookingsData.filter(b => b.status === 'COMPLETED').forEach(booking => {
+        // Client stats
         const clientId = booking.clientId;
         if (!clientStats[clientId]) {
           clientStats[clientId] = {
@@ -48,20 +50,40 @@ const ReportsPage = () => {
           };
         }
         clientStats[clientId].bookings += 1;
-        clientStats[clientId].totalSpent += booking.amount || 0;
+        clientStats[clientId].totalSpent += parseFloat(booking.amount || 0);
         if (new Date(booking.bookingDatetime) > new Date(clientStats[clientId].lastVisit)) {
           clientStats[clientId].lastVisit = booking.bookingDatetime;
         }
+        
+        // Service stats
+        const serviceId = booking.serviceId;
+        if (!serviceStats[serviceId]) {
+          serviceStats[serviceId] = {
+            name: booking.service?.name || 'Unknown',
+            bookings: 0,
+            revenue: 0
+          };
+        }
+        serviceStats[serviceId].bookings += 1;
+        serviceStats[serviceId].revenue += parseFloat(booking.amount || 0);
       });
+      
       const topClients = Object.values(clientStats).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 10);
+      
+      // Merge service stats with service data
+      const servicesWithStats = servicesData.map(service => ({
+        ...service,
+        bookings: serviceStats[service.id]?.bookings || 0,
+        revenue: serviceStats[service.id]?.revenue || 0
+      }));
       
       setProviderStats({
         totalBookings: dashboardData.totalBookings || 0,
         totalRevenue: parseFloat(dashboardData.totalRevenue || 0),
+        grossRevenue: parseFloat(dashboardData.grossRevenue || 0),
         totalCommission: parseFloat(dashboardData.totalCommission || 0),
-        completedBookings: dashboardData.totalBookings || 0,
         rating: parseFloat(dashboardData.avgRating || 0).toFixed(1),
-        services: servicesData || [],
+        services: servicesWithStats,
         monthlyStats: dashboardData.monthlyStats || [],
         topClients
       });
@@ -105,7 +127,7 @@ const ReportsPage = () => {
         monthlyEarnings: (providerStats.monthlyStats || []).map(stat => ({
           month: stat.month,
           bookings: stat.bookings,
-          revenue: parseFloat(stat.grossRevenue || 0),
+          revenue: parseFloat(stat.grossRevenue || stat.revenue || 0),
           commission: parseFloat(stat.commission || 0),
           netEarnings: parseFloat(stat.revenue || 0)
         }))
@@ -113,8 +135,8 @@ const ReportsPage = () => {
       services: {
         services: providerStats.services?.map(service => ({
           name: service.name,
-          bookings: service.totalBookings || 0,
-          revenue: parseFloat(service.price || 0),
+          bookings: service.bookings || 0,
+          revenue: parseFloat(service.revenue || 0),
           rating: parseFloat(service.ratings || 0)
         })) || []
       },
@@ -203,12 +225,12 @@ const ReportsPage = () => {
               <div className="text-sm text-gray-600">Total Bookings</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">KES {Math.floor(providerStats.totalRevenue / 1000)}K</div>
-              <div className="text-sm text-gray-600">Total Revenue</div>
+              <div className="text-2xl font-bold text-blue-600">KES {Math.floor(providerStats.totalRevenue).toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Net Earnings</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{providerStats.completedBookings}</div>
-              <div className="text-sm text-gray-600">Completed Bookings</div>
+              <div className="text-2xl font-bold text-green-600">KES {Math.floor(providerStats.totalCommission).toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Commission Paid</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">{providerStats.rating || 0}</div>

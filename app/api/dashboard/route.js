@@ -139,13 +139,15 @@ export async function GET(request) {
             const date = new Date();
             date.setMonth(date.getMonth() - i);
             const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+            startOfMonth.setHours(0, 0, 0, 0);
             const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+            endOfMonth.setHours(23, 59, 59, 999);
             
             return prisma.booking.aggregate({
               where: {
                 providerId: userId,
                 status: 'COMPLETED',
-                bookingDatetime: {
+                createdAt: {
                   gte: startOfMonth,
                   lte: endOfMonth
                 }
