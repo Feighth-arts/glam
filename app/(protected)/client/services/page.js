@@ -203,6 +203,7 @@ export default function ClientServicesPage() {
 }
 
 function BookingModal({ provider, service, onClose }) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     date: '',
     time: '',
@@ -214,8 +215,6 @@ function BookingModal({ provider, service, onClose }) {
   const [userPoints, setUserPoints] = useState(0);
   const [availablePoints, setAvailablePoints] = useState(0);
   const [userProfile, setUserProfile] = useState(null);
-  const [showMpesa, setShowMpesa] = useState(false);
-  const [bookingData, setBookingData] = useState(null);
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
@@ -271,63 +270,25 @@ function BookingModal({ provider, service, onClose }) {
         })
       });
 
+      const data = await res.json();
+      
       if (res.ok) {
-        const data = await res.json();
-        setBookingData(data);
-        setShowMpesa(true);
+        alert('Booking created successfully!');
+        onClose();
+        router.push('/client/bookings');
       } else {
-        alert('Booking failed');
+        alert(data.error || 'Booking failed');
       }
     } catch (error) {
-      alert('Booking failed');
+      console.error('Booking error:', error);
+      alert('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMpesaSuccess = async (transactionId, phoneNumber) => {
-    // Send provider notification email
-    if (provider?.email && bookingData) {
-      try {
-        const { sendProviderBookingNotification } = await import('@/lib/email-service');
-        await sendProviderBookingNotification(
-          {
-            id: bookingData.id,
-            clientName: userProfile?.name || 'Client',
-            serviceName: service.name,
-            date: formData.date,
-            time: formData.time,
-            totalAmount: finalPrice,
-            location: formData.location || 'Not specified'
-          },
-          provider.email,
-          provider.name
-        );
-      } catch (err) {
-        console.log('Email notification failed:', err);
-      }
-    }
-    
-    alert('Payment successful! Waiting for provider confirmation.');
-    onClose();
-    window.location.reload();
-  };
-
-  const handleMpesaFailure = (error) => {
-    alert(`Payment failed: ${error}`);
-  };
-
   return (
-    <>
-      <MpesaSimulation
-        isOpen={showMpesa}
-        onClose={() => setShowMpesa(false)}
-        amount={finalPrice}
-        paymentId={bookingData?.payment?.id}
-        onSuccess={handleMpesaSuccess}
-        onFailure={handleMpesaFailure}
-      />
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Book {service.name}</h2>
         <p className="text-gray-600 mb-4">with {provider.name}</p>
@@ -422,6 +383,5 @@ function BookingModal({ provider, service, onClose }) {
         </form>
       </div>
     </div>
-    </>
   );
 }

@@ -6,13 +6,13 @@ import { X, Smartphone, CheckCircle, XCircle } from 'lucide-react';
 export default function MpesaSimulation({ isOpen, onClose, amount, paymentId, onSuccess, onFailure }) {
   const [step, setStep] = useState('phone'); // phone, waiting, success, failure
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(15);
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
     if (phoneNumber.length === 10) {
       setStep('waiting');
-      setCountdown(60);
+      setCountdown(15);
       
       try {
         // Initiate STK push
@@ -50,9 +50,9 @@ export default function MpesaSimulation({ isOpen, onClose, amount, paymentId, on
           });
         }, 1000);
         
-        // Poll for status every 3 seconds for up to 21 seconds
+        // Poll for status every 2 seconds for up to 10 seconds
         let attempts = 0;
-        const maxAttempts = 7;
+        const maxAttempts = 5;
         
         const pollStatus = setInterval(async () => {
           attempts++;
@@ -113,7 +113,7 @@ export default function MpesaSimulation({ isOpen, onClose, amount, paymentId, on
           } catch (error) {
             console.error('Poll error:', error);
           }
-        }, 3000);
+        }, 2000);
       } catch (error) {
         setStep('failure');
         setTimeout(() => {
@@ -127,7 +127,7 @@ export default function MpesaSimulation({ isOpen, onClose, amount, paymentId, on
   const handleClose = () => {
     setStep('phone');
     setPhoneNumber('');
-    setCountdown(60);
+    setCountdown(15);
     onClose();
   };
 

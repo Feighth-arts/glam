@@ -5,19 +5,17 @@ export async function POST(request) {
   try {
     const { checkoutRequestID } = await request.json();
 
-    const statusResponse = await querySTKStatus(checkoutRequestID);
-
+    // Always return pending - simulate-success will handle completion
     return NextResponse.json({
       success: true,
-      resultCode: statusResponse.ResultCode,
-      resultDesc: statusResponse.ResultDesc
+      resultCode: 1032,
+      resultDesc: 'Request pending'
     });
   } catch (error) {
     console.error('Query STK status error:', error);
-    // Return pending status for demo mode when API fails
     return NextResponse.json({
       success: true,
-      resultCode: 1032, // Request pending
+      resultCode: 1032,
       resultDesc: 'Request pending'
     });
   }
