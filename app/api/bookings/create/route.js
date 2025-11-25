@@ -76,8 +76,8 @@ export async function POST(request) {
     }
 
     const finalAmount = basePrice - discount;
-    const commission = finalAmount * COMMISSION_RATE;
-    const providerEarning = finalAmount - commission;
+    const commission = basePrice * COMMISSION_RATE;
+    const providerEarning = basePrice - commission;
 
     const booking = await prisma.booking.create({
       data: {
