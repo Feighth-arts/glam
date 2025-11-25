@@ -1,45 +1,83 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart, TrendingUp, Calendar, DollarSign, Download, Star } from 'lucide-react';
-import { USERS, BOOKINGS, getClientStats } from '@/lib/normalized-data';
 import { generateClientReport } from '@/lib/pdf-generator';
 
 export default function ClientReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('6months');
-  const clientId = "client_001";
-  const client = USERS.clients.find(c => c.id === clientId);
-  const clientStats = getClientStats(clientId);
-  const clientBookings = BOOKINGS.filter(b => b.clientId === clientId);
-  
-  // Mock analytics data - in real app, this would come from API
-  const analyticsData = {
-    spending: {
-      '6months': [
-        { month: 'Aug', amount: 8500, bookings: 3 },
-        { month: 'Sep', amount: 12000, bookings: 4 },
-        { month: 'Oct', amount: 6500, bookings: 2 },
-        { month: 'Nov', amount: 15000, bookings: 5 },
-        { month: 'Dec', amount: 9800, bookings: 3 },
-        { month: 'Jan', amount: 11200, bookings: 4 }
-      ]
-    },
-    serviceBreakdown: [
-      { service: 'Hair Styling', count: 8, amount: 28000, percentage: 45 },
-      { service: 'Makeup', count: 6, amount: 18000, percentage: 29 },
-      { service: 'Nail Art', count: 5, amount: 9500, percentage: 15 },
-      { service: 'Facial Treatment', count: 3, amount: 6500, percentage: 11 }
-    ],
-    favoriteProviders: [
-      { name: 'Sarah Johnson', bookings: 6, amount: 21000 },
-      { name: 'Mary Wanjiku', bookings: 4, amount: 11200 },
-      { name: 'Jane Doe', bookings: 3, amount: 4500 }
-    ]
-  };
+  const [bookings, setBookings] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const totalSpent = clientStats.totalSpent;
-  const totalBookings = clientStats.totalBookings;
-  const avgSpending = totalSpent / 6; // 6 months average
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    const headers = { 'x-user-id': userId, 'x-user-role': userRole };
+
+    Promise.all([
+      fetch('/api/bookings', { headers }).then(r => r.json()),
+      fetch('/api/users/profile', { headers }).then(r => r.json())
+    ]).then(([bookingsData, profileData]) => {
+      setBookings(bookingsData.filter(b => ['PAID', 'CONFIRMED', 'COMPLETED'].includes(b.status)));
+      setUserProfile(profileData);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
+  
+  // Calculate real analytics from bookings
+  const totalSpent = bookings.reduce((sum, b) => sum + parseFloat(b.amount), 0);
+  const totalBookings = bookings.length;
+  
+  // Group by month
+  const monthlyData = {};
+  bookings.forEach(b => {
+    const date = new Date(b.bookingDatetime);
+    const monthKey = date.toLocaleString('default', { month: 'short' });
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { month: monthKey, amount: 0, bookings: 0 };
+    }
+    monthlyData[monthKey].amount += parseFloat(b.amount);
+    monthlyData[monthKey].bookings += 1;
+  });
+  const monthlySpending = Object.values(monthlyData).slice(-6);
+  
+  // Service breakdown
+  const serviceData = {};
+  bookings.forEach(b => {
+    const serviceName = b.service?.name || 'Unknown';
+    if (!serviceData[serviceName]) {
+      serviceData[serviceName] = { service: serviceName, count: 0, amount: 0 };
+    }
+    serviceData[serviceName].count += 1;
+    serviceData[serviceName].amount += parseFloat(b.amount);
+  });
+  const serviceBreakdown = Object.values(serviceData).map(s => ({
+    ...s,
+    percentage: Math.round((s.amount / totalSpent) * 100)
+  }));
+  
+  // Favorite providers
+  const providerData = {};
+  bookings.forEach(b => {
+    const providerName = b.provider?.name || 'Unknown';
+    if (!providerData[providerName]) {
+      providerData[providerName] = { name: providerName, bookings: 0, amount: 0 };
+    }
+    providerData[providerName].bookings += 1;
+    providerData[providerName].amount += parseFloat(b.amount);
+  });
+  const favoriteProviders = Object.values(providerData).sort((a, b) => b.amount - a.amount).slice(0, 3);
+  
+  const avgSpending = monthlySpending.length > 0 ? totalSpent / monthlySpending.length : 0;
+  
+  const analyticsData = {
+    spending: { '6months': monthlySpending },
+    serviceBreakdown,
+    favoriteProviders
+  };
 
   const downloadReport = (type) => {
     const reportData = {
@@ -52,14 +90,23 @@ export default function ClientReportsPage() {
         serviceBreakdown: analyticsData.serviceBreakdown
       },
       points: {
-        totalPointsEarned: client?.stats?.lifetimePoints || 0,
-        pointsRedeemed: client?.stats?.pointsRedeemed || 0,
-        currentPoints: client?.stats?.currentPoints || 0,
-        tier: client?.tier || 'Bronze'
+        totalPointsEarned: userProfile?.userPoints?.lifetimePoints || 0,
+        pointsRedeemed: (userProfile?.userPoints?.lifetimePoints || 0) - (userProfile?.userPoints?.currentPoints || 0),
+        currentPoints: userProfile?.userPoints?.currentPoints || 0,
+        tier: userProfile?.userPoints?.tier || 'BRONZE'
+      },
+      summary: {
+        totalSpent,
+        totalBookings,
+        avgSpending,
+        monthlySpending: analyticsData.spending['6months'],
+        serviceBreakdown: analyticsData.serviceBreakdown,
+        favoriteProviders: analyticsData.favoriteProviders,
+        points: userProfile?.userPoints || {}
       }
     };
     
-    generateClientReport(type, reportData[type] || {});
+    generateClientReport(type, reportData[type] || reportData.summary);
   };
 
   return (
@@ -119,7 +166,7 @@ export default function ClientReportsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Points Earned</p>
-              <p className="text-2xl font-bold text-rose-primary">{client?.stats?.lifetimePoints || 0}</p>
+              <p className="text-2xl font-bold text-rose-primary">{userProfile?.userPoints?.lifetimePoints || 0}</p>
             </div>
             <Star className="w-8 h-8 text-rose-primary" />
           </div>
