@@ -55,12 +55,22 @@ export async function GET(request) {
         _avg: { rating: true }
       });
 
+      const uniqueClients = await prisma.booking.findMany({
+        where: { 
+          providerId: userId,
+          status: 'COMPLETED'
+        },
+        select: { clientId: true },
+        distinct: ['clientId']
+      });
+
       stats = {
         totalEarnings: earnings._sum.providerEarning || 0,
         totalCommission: earnings._sum.commission || 0,
         completedBookings: earnings._count,
         avgRating: avgRating._avg.rating || 0,
-        totalReviews: user._count.providerReviews
+        totalReviews: user._count.providerReviews,
+        totalClients: uniqueClients.length
       };
     } else if (user.role === 'CLIENT') {
       const spending = await prisma.booking.aggregate({

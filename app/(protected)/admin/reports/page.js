@@ -126,7 +126,7 @@ export default function AdminReportsPage() {
             <div>
               <p className="text-sm text-gray-600">Total Revenue</p>
               <p className="text-2xl font-bold text-green-600">KES {platformStats.totalRevenue.toLocaleString()}</p>
-              <p className="text-xs text-green-500 mt-1">+15.2% from last period</p>
+
             </div>
             <DollarSign className="w-8 h-8 text-green-600" />
           </div>
@@ -136,7 +136,7 @@ export default function AdminReportsPage() {
             <div>
               <p className="text-sm text-gray-600">Total Bookings</p>
               <p className="text-2xl font-bold text-blue-600">{platformStats.totalBookings}</p>
-              <p className="text-xs text-blue-500 mt-1">+8.7% from last period</p>
+
             </div>
             <Calendar className="w-8 h-8 text-blue-600" />
           </div>
@@ -146,7 +146,7 @@ export default function AdminReportsPage() {
             <div>
               <p className="text-sm text-gray-600">Active Users</p>
               <p className="text-2xl font-bold text-purple-600">{platformStats.totalUsers}</p>
-              <p className="text-xs text-purple-500 mt-1">+12.3% from last period</p>
+
             </div>
             <Users className="w-8 h-8 text-purple-600" />
           </div>

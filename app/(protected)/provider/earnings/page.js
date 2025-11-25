@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DollarSign, TrendingUp, Calendar, Download } from "lucide-react";
+import { DollarSign, TrendingUp, Calendar } from "lucide-react";
 
 const EarningsPage = () => {
   const [earningsData, setEarningsData] = useState([]);
@@ -57,13 +57,7 @@ const EarningsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Earnings</h1>
-        <button className="flex items-center gap-2 px-4 py-2 bg-rose-primary text-white rounded-lg hover:bg-rose-dark">
-          <Download className="w-4 h-4" />
-          Export Report
-        </button>
-      </div>
+      <h1 className="text-2xl font-bold text-gray-900">Earnings</h1>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -95,7 +89,7 @@ const EarningsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Average per Booking</p>
-              <p className="text-2xl font-bold text-gray-900">KES {Math.round(totalEarnings / totalBookings)}</p>
+              <p className="text-2xl font-bold text-gray-900">KES {totalBookings > 0 ? Math.round(totalEarnings / totalBookings).toLocaleString() : '0'}</p>
             </div>
             <div className="bg-purple-50 p-3 rounded-full">
               <TrendingUp className="w-6 h-6 text-purple-600" />
@@ -126,7 +120,7 @@ const EarningsPage = () => {
                     <td className="py-3 px-4 text-gray-900">{item.month}</td>
                     <td className="py-3 px-4 text-green-600 font-semibold">KES {item.amount.toLocaleString()}</td>
                     <td className="py-3 px-4 text-gray-900">{item.bookings}</td>
-                    <td className="py-3 px-4 text-gray-900">KES {Math.round(item.amount / item.bookings)}</td>
+                    <td className="py-3 px-4 text-gray-900">KES {item.bookings > 0 ? Math.round(item.amount / item.bookings).toLocaleString() : '0'}</td>
                   </tr>
                 ))}
               </tbody>

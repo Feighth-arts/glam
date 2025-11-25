@@ -5,18 +5,18 @@ import { getUserId, getUserRole } from '@/lib/auth-helper';
 export async function GET(request) {
   try {
     const userId = getUserId(request);
-    const role = getUserRole(request);
-
-    if (!userId || role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const userRole = getUserRole(request);
+    
+    if (!userId || userRole !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const bookings = await prisma.booking.findMany({
       include: {
-        client: { select: { id: true, name: true } },
-        provider: { select: { id: true, name: true } },
+        client: { select: { name: true } },
+        provider: { select: { name: true } },
         service: { select: { name: true } },
-        payment: { select: { status: true } }
+        payment: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -26,20 +26,20 @@ export async function GET(request) {
       clientName: booking.client.name,
       providerName: booking.provider.name,
       service: booking.service.name,
-      date: booking.bookingDatetime.toISOString().split('T')[0],
-      time: booking.bookingDatetime.toISOString().split('T')[1].slice(0, 5),
-      location: booking.location || 'N/A',
+      date: new Date(booking.bookingDatetime).toLocaleDateString(),
+      time: new Date(booking.bookingDatetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
       price: parseFloat(booking.amount),
       commission: parseFloat(booking.commission),
       providerEarning: parseFloat(booking.providerEarning),
       points: booking.pointsEarned,
-      status: booking.status.toLowerCase(),
-      paymentStatus: booking.payment?.status.toLowerCase() || 'pending'
+      status: booking.status.toLowerCase().replace('_', '-'),
+      paymentStatus: booking.payment?.status === 'COMPLETED' || booking.payment?.status === 'DEMO_SUCCESS' ? 'paid' : 'pending',
+      location: booking.location || 'Not specified'
     }));
 
     return NextResponse.json(formattedBookings);
   } catch (error) {
-    console.error('Get bookings error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Admin bookings API error:', error);
+    return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
   }
 }

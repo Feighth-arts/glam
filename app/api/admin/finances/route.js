@@ -5,58 +5,55 @@ import { getUserId, getUserRole } from '@/lib/auth-helper';
 export async function GET(request) {
   try {
     const userId = getUserId(request);
-    const role = getUserRole(request);
-
-    if (!userId || role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const userRole = getUserRole(request);
+    
+    if (!userId || userRole !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const bookings = await prisma.booking.findMany({
-      where: { status: { in: ['PAID', 'CONFIRMED', 'COMPLETED'] } },
-      include: {
-        provider: { select: { name: true } },
-        payment: { select: { status: true, completedAt: true } }
+    const stats = await prisma.booking.aggregate({
+      where: { status: 'COMPLETED' },
+      _sum: {
+        amount: true,
+        commission: true,
+        providerEarning: true
       }
     });
 
-    const totalRevenue = bookings.reduce((sum, b) => sum + parseFloat(b.amount), 0);
-    const totalCommission = bookings.reduce((sum, b) => sum + parseFloat(b.commission), 0);
-    const totalProviderEarnings = bookings.reduce((sum, b) => sum + parseFloat(b.providerEarning), 0);
-
-    const pendingPayouts = await prisma.booking.findMany({
-      where: { 
-        status: 'COMPLETED',
-        payment: { status: 'COMPLETED' }
-      },
-      include: {
-        provider: { select: { id: true, name: true } }
+    const providers = await prisma.user.findMany({
+      where: { role: 'PROVIDER' },
+      select: {
+        id: true,
+        name: true,
+        providerBookings: {
+          where: { status: 'COMPLETED' },
+          select: {
+            providerEarning: true,
+            createdAt: true
+          }
+        }
       }
     });
 
-    const payoutsByProvider = {};
-    pendingPayouts.forEach(booking => {
-      const providerId = booking.provider.id;
-      if (!payoutsByProvider[providerId]) {
-        payoutsByProvider[providerId] = {
-          id: providerId,
-          provider: booking.provider.name,
-          amount: 0,
-          bookings: 0,
-          dueDate: new Date().toISOString().split('T')[0]
-        };
-      }
-      payoutsByProvider[providerId].amount += parseFloat(booking.providerEarning);
-      payoutsByProvider[providerId].bookings += 1;
-    });
+    const pendingPayouts = providers.map(provider => {
+      const earnings = provider.providerBookings.reduce((sum, b) => sum + parseFloat(b.providerEarning), 0);
+      return {
+        id: provider.id,
+        provider: provider.name,
+        amount: earnings,
+        bookings: provider.providerBookings.length,
+        dueDate: new Date().toLocaleDateString()
+      };
+    }).filter(p => p.amount > 0);
 
     return NextResponse.json({
-      totalRevenue,
-      totalCommission,
-      totalProviderEarnings,
-      pendingPayouts: Object.values(payoutsByProvider)
+      totalRevenue: parseFloat(stats._sum.amount || 0),
+      totalCommission: parseFloat(stats._sum.commission || 0),
+      totalProviderEarnings: parseFloat(stats._sum.providerEarning || 0),
+      pendingPayouts
     });
   } catch (error) {
-    console.error('Get finances error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Admin finances API error:', error);
+    return NextResponse.json({ error: 'Failed to fetch finances' }, { status: 500 });
   }
 }

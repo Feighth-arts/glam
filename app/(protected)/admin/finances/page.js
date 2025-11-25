@@ -27,12 +27,7 @@ export default function AdminFinancesPage() {
   const totalProviderEarnings = financeData?.totalProviderEarnings || 0;
   const pendingPayouts = financeData?.pendingPayouts || [];
 
-  const recentTransactions = [
-    { id: 1, type: 'commission', description: 'Booking #001 - Hair Styling', amount: 525, date: '2024-01-15' },
-    { id: 2, type: 'payout', description: 'Weekly payout - Sarah Johnson', amount: -45000, date: '2024-01-14' },
-    { id: 3, type: 'commission', description: 'Booking #002 - Makeup', amount: 420, date: '2024-01-13' },
-    { id: 4, type: 'refund', description: 'Refund - Booking #003', amount: -1500, date: '2024-01-12' }
-  ];
+  const recentTransactions = [];
 
   const handleExport = (type) => {
     const data = {
@@ -92,7 +87,7 @@ export default function AdminFinancesPage() {
             <div>
               <p className="text-sm text-gray-600">Total Revenue</p>
               <p className="text-2xl font-bold text-green-600">KES {totalRevenue.toLocaleString()}</p>
-              <p className="text-xs text-green-500 mt-1">+12.5% from last month</p>
+
             </div>
             <DollarSign className="w-8 h-8 text-green-600" />
           </div>
@@ -160,27 +155,7 @@ export default function AdminFinancesPage() {
                 </div>
               </div>
 
-              {/* Commission Breakdown */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Commission Breakdown</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-sm text-green-600 font-medium">Hair Services</p>
-                    <p className="text-xl font-bold text-green-700">KES 15,750</p>
-                    <p className="text-xs text-green-600">45% of total commission</p>
-                  </div>
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <p className="text-sm text-purple-600 font-medium">Makeup Services</p>
-                    <p className="text-xl font-bold text-purple-700">KES 10,500</p>
-                    <p className="text-xs text-purple-600">30% of total commission</p>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <p className="text-sm text-blue-600 font-medium">Other Services</p>
-                    <p className="text-xl font-bold text-blue-700">KES 8,750</p>
-                    <p className="text-xs text-blue-600">25% of total commission</p>
-                  </div>
-                </div>
-              </div>
+
             </div>
           )}
 
@@ -223,37 +198,10 @@ export default function AdminFinancesPage() {
           )}
 
           {activeTab === 'transactions' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Recent Transactions</h3>
-              <div className="space-y-3">
-                {recentTransactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        transaction.amount > 0 ? 'bg-green-100' : 'bg-red-100'
-                      }`}>
-                        <DollarSign className={`w-5 h-5 ${
-                          transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                        }`} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{transaction.description}</p>
-                        <p className="text-sm text-gray-500">{transaction.type} • {transaction.date}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <p className={`font-semibold ${
-                        transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.amount > 0 ? '+' : ''}KES {Math.abs(transaction.amount).toLocaleString()}
-                      </p>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="text-center py-12">
+              <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Transaction History</h3>
+              <p className="text-gray-500">Transaction tracking coming soon</p>
             </div>
           )}
         </div>
