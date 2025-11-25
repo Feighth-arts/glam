@@ -186,8 +186,8 @@ const ProviderDashboard = () => {
               <div className="text-sm text-gray-600">Weekly Revenue</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">KES {Math.round((dashboardData?.weeklyRevenue || 0) * 0.15).toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Commission (15%)</div>
+              <div className="text-2xl font-bold text-blue-600">KES {Math.round(dashboardData?.totalCommission || 0).toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Total Commission</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-600">{(dashboardData?.avgRating || 0).toFixed(1)}★</div>
