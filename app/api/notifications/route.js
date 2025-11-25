@@ -15,15 +15,20 @@ export async function GET(request) {
       take: 50
     });
 
-    const formattedNotifications = notifications.map(notification => ({
-      id: notification.id,
-      type: notification.type.toLowerCase(),
-      title: notification.title,
-      message: notification.message,
-      time: getTimeAgo(notification.createdAt),
-      read: notification.read,
-      icon: getNotificationIcon(notification.type)
-    }));
+    const formattedNotifications = notifications.map(notification => {
+      const content = typeof notification.content === 'string' ? JSON.parse(notification.content) : notification.content;
+      return {
+        id: notification.id,
+        type: content.type || 'system',
+        title: notification.subject || content.title || 'Notification',
+        message: content.message || '',
+        time: getTimeAgo(notification.createdAt),
+        read: notification.status === 'SENT',
+        icon: getNotificationIcon(notification.type),
+        bg: getNotificationBg(content.type),
+        color: getNotificationColor(content.type)
+      };
+    });
 
     return NextResponse.json(formattedNotifications);
   } catch (error) {
@@ -47,15 +52,15 @@ export async function PATCH(request) {
           id: notificationId,
           userId 
         },
-        data: { read: true }
+        data: { status: 'SENT' }
       });
     } else if (action === 'markAllAsRead') {
       await prisma.notification.updateMany({
         where: { 
           userId,
-          read: false 
+          status: 'PENDING'
         },
-        data: { read: true }
+        data: { status: 'SENT' }
       });
     }
 
@@ -101,11 +106,33 @@ function getTimeAgo(date) {
 
 function getNotificationIcon(type) {
   const iconMap = {
-    'BOOKING': 'Calendar',
-    'REVIEW': 'Star', 
-    'CLIENT': 'User',
-    'PAYMENT': 'DollarSign',
-    'SYSTEM': 'Bell'
+    'booking': 'Calendar',
+    'review': 'Star', 
+    'reward': 'Gift',
+    'reminder': 'Bell',
+    'promotion': 'Gift'
   };
   return iconMap[type] || 'Bell';
+}
+
+function getNotificationBg(type) {
+  const bgMap = {
+    'booking': 'bg-blue-50',
+    'review': 'bg-yellow-50',
+    'reward': 'bg-purple-50',
+    'reminder': 'bg-yellow-50',
+    'promotion': 'bg-green-50'
+  };
+  return bgMap[type] || 'bg-gray-50';
+}
+
+function getNotificationColor(type) {
+  const colorMap = {
+    'booking': 'text-blue-600',
+    'review': 'text-yellow-600',
+    'reward': 'text-purple-600',
+    'reminder': 'text-yellow-600',
+    'promotion': 'text-green-600'
+  };
+  return colorMap[type] || 'text-gray-600';
 }

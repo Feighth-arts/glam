@@ -102,7 +102,7 @@ export async function GET(request) {
             providerId: userId,
             status: 'COMPLETED'
           },
-          _sum: { providerEarning: true },
+          _sum: { providerEarning: true, amount: true, commission: true },
           _count: true
         }),
         prisma.booking.count({
@@ -150,11 +150,13 @@ export async function GET(request) {
                   lte: endOfMonth
                 }
               },
-              _sum: { providerEarning: true },
+              _sum: { providerEarning: true, amount: true, commission: true },
               _count: true
             }).then(result => ({
               month: date.toLocaleString('default', { month: 'long' }),
               revenue: result._sum.providerEarning || 0,
+              grossRevenue: result._sum.amount || 0,
+              commission: result._sum.commission || 0,
               bookings: result._count
             }));
           })
@@ -177,6 +179,8 @@ export async function GET(request) {
 
       dashboardData = {
         totalRevenue: totalStats._sum.providerEarning || 0,
+        grossRevenue: totalStats._sum.amount || 0,
+        totalCommission: totalStats._sum.commission || 0,
         totalBookings: allBookingsCount,
         todayBookings,
         weeklyRevenue: weeklyStats._sum.providerEarning || 0,

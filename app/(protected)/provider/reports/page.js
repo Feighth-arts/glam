@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, FileText, BarChart3, Users, Calendar, DollarSign } from "lucide-react";
+import { Download, BarChart3, Users, DollarSign } from "lucide-react";
 import { generateProviderReport } from '@/lib/pdf-generator';
 
 const ReportsPage = () => {
@@ -57,10 +57,10 @@ const ReportsPage = () => {
       
       setProviderStats({
         totalBookings: dashboardData.totalBookings || 0,
-        totalRevenue: dashboardData.totalRevenue || 0,
-        totalCommission: (dashboardData.totalRevenue || 0) * 0.15,
+        totalRevenue: parseFloat(dashboardData.totalRevenue || 0),
+        totalCommission: parseFloat(dashboardData.totalCommission || 0),
         completedBookings: dashboardData.totalBookings || 0,
-        rating: profileData.stats?.avgRating || 0,
+        rating: parseFloat(dashboardData.avgRating || 0).toFixed(1),
         services: servicesData || [],
         monthlyStats: dashboardData.monthlyStats || [],
         topClients
@@ -72,81 +72,57 @@ const ReportsPage = () => {
     }
   };
 
-  const reportCategories = [
+  const reports = [
     {
-      title: "Financial Reports",
+      name: "Earnings Report",
+      description: "Monthly revenue, commission, and net earnings",
       icon: DollarSign,
       color: "text-green-600",
       bg: "bg-green-50",
-      reports: [
-        { name: "Revenue Summary", description: "Monthly revenue breakdown and trends" },
-        { name: "Payment History", description: "Complete payment transaction history" },
-        { name: "Tax Report", description: "Tax-ready financial summary" }
-      ]
+      type: "earnings"
     },
     {
-      title: "Booking Reports",
-      icon: Calendar,
+      name: "Services Report",
+      description: "Service performance and booking statistics",
+      icon: BarChart3,
       color: "text-blue-600",
       bg: "bg-blue-50",
-      reports: [
-        { name: "Booking Analytics", description: "Booking patterns and statistics" },
-        { name: "Service Performance", description: "Most popular services analysis" },
-        { name: "Cancellation Report", description: "Cancellation rates and reasons" }
-      ]
+      type: "services"
     },
     {
-      title: "Client Reports",
+      name: "Clients Report",
+      description: "Top clients and spending analysis",
       icon: Users,
       color: "text-purple-600",
       bg: "bg-purple-50",
-      reports: [
-        { name: "Client Demographics", description: "Client age, location, and preferences" },
-        { name: "Loyalty Analysis", description: "Repeat clients and retention rates" },
-        { name: "Feedback Summary", description: "Client reviews and ratings analysis" }
-      ]
-    },
-    {
-      title: "Performance Reports",
-      icon: BarChart3,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
-      reports: [
-        { name: "Business Overview", description: "Complete business performance summary" },
-        { name: "Growth Metrics", description: "Month-over-month growth analysis" },
-        { name: "Competitive Analysis", description: "Market position and benchmarks" }
-      ]
+      type: "clients"
     }
   ];
 
-  const downloadReport = (categoryTitle, reportName) => {
-    const reportType = reportName.toLowerCase().includes('revenue') || reportName.toLowerCase().includes('financial') ? 'earnings' :
-                      reportName.toLowerCase().includes('service') || reportName.toLowerCase().includes('booking') ? 'services' :
-                      reportName.toLowerCase().includes('client') ? 'clients' : 'earnings';
-    
+  const downloadReport = (reportType) => {
     const reportData = {
       earnings: {
         monthlyEarnings: (providerStats.monthlyStats || []).map(stat => ({
           month: stat.month,
           bookings: stat.bookings,
-          revenue: stat.revenue,
-          commission: stat.revenue * 0.15,
-          netEarnings: stat.revenue * 0.85
+          revenue: parseFloat(stat.grossRevenue || 0),
+          commission: parseFloat(stat.commission || 0),
+          netEarnings: parseFloat(stat.revenue || 0)
         }))
       },
       services: {
         services: providerStats.services?.map(service => ({
           name: service.name,
-          bookings: service._count?.bookings || 0,
-          revenue: service.price || 0,
-          rating: service.avgRating || 0
+          bookings: service.totalBookings || 0,
+          revenue: parseFloat(service.price || 0),
+          rating: parseFloat(service.ratings || 0)
         })) || []
       },
       clients: {
         topClients: (providerStats.topClients || []).map(client => ({
           name: client.name,
           bookings: client.bookings,
-          totalSpent: client.totalSpent,
+          totalSpent: parseFloat(client.totalSpent || 0),
           lastVisit: new Date(client.lastVisit).toLocaleDateString()
         }))
       }
@@ -189,41 +165,27 @@ const ReportsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {reportCategories.map((category, categoryIndex) => {
-          const Icon = category.icon;
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {reports.map((report, index) => {
+          const Icon = report.icon;
           return (
-            <div key={categoryIndex} className="bg-white rounded-lg shadow">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div className={`${category.bg} p-2 rounded-lg`}>
-                    <Icon className={`w-6 h-6 ${category.color}`} />
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">{category.title}</h2>
+            <div key={index} className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`${report.bg} p-3 rounded-lg`}>
+                  <Icon className={`w-6 h-6 ${report.color}`} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">{report.name}</h3>
+                  <p className="text-sm text-gray-600">{report.description}</p>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {category.reports.map((report, reportIndex) => (
-                    <div key={reportIndex} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-gray-400" />
-                        <div>
-                          <h3 className="font-medium text-gray-900">{report.name}</h3>
-                          <p className="text-sm text-gray-600">{report.description}</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => downloadReport(category.title, report.name)}
-                        className="flex items-center gap-2 px-3 py-2 bg-rose-primary text-white rounded-lg hover:bg-rose-dark transition-colors text-sm"
-                      >
-                        <Download className="w-4 h-4" />
-                        PDF
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <button
+                onClick={() => downloadReport(report.type)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-primary text-white rounded-lg hover:bg-rose-dark transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download PDF
+              </button>
             </div>
           );
         })}
