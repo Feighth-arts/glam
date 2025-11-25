@@ -1,59 +1,27 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, Save, RefreshCw, Shield, DollarSign, Users, Bell } from 'lucide-react';
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('platform');
-  const defaultSettings = {
-    platform: {
-      siteName: 'Glamease',
-      siteDescription: 'Your premier beauty services platform',
-      supportEmail: 'support@glamease.com',
-      maintenanceMode: false,
-      allowRegistrations: true
-    },
-    commission: {
-      rate: 0.15,
-      minimum: 50,
-      maximum: 5000
-    },
-    points: {
-      earningRate: 10,
-      bonusPoints: { firstBooking: 500, review: 50, referral: 200 },
-      redemptionMinimum: 100,
-      expiryMonths: 12
-    },
-    notifications: {
-      emailNotifications: true,
-      smsNotifications: true,
-      pushNotifications: true,
-      marketingEmails: false
-    },
-    security: {
-      requireEmailVerification: true,
-      requirePhoneVerification: false,
-      twoFactorAuth: false,
-      sessionTimeout: 30,
-      passwordMinLength: 8
-    },
-    payouts: {
-      frequency: 'weekly',
-      minimumAmount: 1000,
-      processingDays: 3,
-      autoProcess: false
-    }
-  };
-
-  const [settings, setSettings] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adminSettings');
-      return saved ? JSON.parse(saved) : defaultSettings;
-    }
-    return defaultSettings;
-  });
-
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch('/api/admin/settings', {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
+      setSettings(data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
+  if (!settings) return <div className="flex justify-center items-center h-64">Failed to load settings</div>;
 
   const handleSettingChange = (category, key, value) => {
     setSettings(prev => ({
@@ -81,22 +49,42 @@ export default function AdminSettingsPage() {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      localStorage.setItem('adminSettings', JSON.stringify(settings));
-      await new Promise(resolve => setTimeout(resolve, 500));
-      alert('Settings saved successfully!');
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': userId, 
+          'x-user-role': userRole 
+        },
+        body: JSON.stringify(settings)
+      });
+      if (res.ok) {
+        alert('Settings saved successfully!');
+      } else {
+        alert('Failed to save settings');
+      }
     } catch (error) {
-      console.error('Error saving settings:', error);
-      alert('Error saving settings. Please try again.');
+      alert('Error saving settings');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const resetToDefaults = () => {
+  const resetToDefaults = async () => {
     if (confirm('Are you sure you want to reset all settings to defaults?')) {
-      setSettings(defaultSettings);
-      localStorage.setItem('adminSettings', JSON.stringify(defaultSettings));
-      alert('Settings reset to defaults!');
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+      const res = await fetch('/api/admin/settings?reset=true', {
+        method: 'POST',
+        headers: { 'x-user-id': userId, 'x-user-role': userRole }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSettings(data);
+        alert('Settings reset to defaults!');
+      }
     }
   };
 

@@ -1,94 +1,29 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageSquare, AlertTriangle, CheckCircle, Clock, User, Calendar, Search, Filter } from 'lucide-react';
 
 export default function AdminSupportPage() {
   const [activeTab, setActiveTab] = useState('tickets');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [tickets, setTickets] = useState([]);
+  const [disputes, setDisputes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const defaultTickets = [
-    {
-      id: 'TKT-001',
-      subject: 'Payment not processed',
-      description: 'My payment was deducted but booking not confirmed',
-      user: 'Faith Kiplangat',
-      userType: 'client',
-      priority: 'high',
-      status: 'open',
-      createdAt: '2024-01-15T10:30:00Z',
-      updatedAt: '2024-01-15T14:20:00Z',
-      assignedTo: 'Admin Team'
-    },
-    {
-      id: 'TKT-002', 
-      subject: 'Provider verification delay',
-      description: 'Submitted documents 5 days ago, still pending approval',
-      user: 'John Beauty Salon',
-      userType: 'provider',
-      priority: 'medium',
-      status: 'in-progress',
-      createdAt: '2024-01-14T09:15:00Z',
-      updatedAt: '2024-01-15T11:45:00Z',
-      assignedTo: 'Verification Team'
-    },
-    {
-      id: 'TKT-003',
-      subject: 'Service quality complaint',
-      description: 'Unsatisfied with makeup service quality, requesting refund',
-      user: 'Grace Mwangi',
-      userType: 'client',
-      priority: 'medium',
-      status: 'resolved',
-      createdAt: '2024-01-13T16:20:00Z',
-      updatedAt: '2024-01-14T10:30:00Z',
-      assignedTo: 'Customer Success'
-    }
-  ];
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    fetch('/api/admin/support', {
+      headers: { 'x-user-id': userId, 'x-user-role': userRole }
+    }).then(r => r.json()).then(data => {
+      setTickets(data.tickets || []);
+      setDisputes(data.disputes || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
 
-  const defaultDisputes = [
-    {
-      id: 'DSP-001',
-      title: 'Service not provided',
-      client: 'Faith Kiplangat',
-      provider: 'Sarah Johnson',
-      bookingId: 'book_001',
-      amount: 3500,
-      reason: 'Provider did not show up for appointment',
-      status: 'pending',
-      createdAt: '2024-01-15T08:00:00Z',
-      evidence: ['Screenshot of booking confirmation', 'No-show photo']
-    },
-    {
-      id: 'DSP-002',
-      title: 'Payment dispute',
-      client: 'Grace Mwangi', 
-      provider: 'Mary Wanjiku',
-      bookingId: 'book_002',
-      amount: 2800,
-      reason: 'Charged extra fees not mentioned in booking',
-      status: 'investigating',
-      createdAt: '2024-01-14T12:30:00Z',
-      evidence: ['Payment receipt', 'Chat conversation']
-    }
-  ];
-
-  const [tickets, setTickets] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adminTickets');
-      return saved ? JSON.parse(saved) : defaultTickets;
-    }
-    return defaultTickets;
-  });
-
-  const [disputes, setDisputes] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adminDisputes');
-      return saved ? JSON.parse(saved) : defaultDisputes;
-    }
-    return defaultDisputes;
-  });
+  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,31 +61,26 @@ export default function AdminSupportPage() {
     }
   };
 
-  const handleTicketAction = (ticketId, action) => {
-    const updatedTickets = tickets.map(ticket => {
-      if (ticket.id === ticketId) {
-        if (action === 'assign') return { ...ticket, status: 'in-progress' };
-        if (action === 'resolve') return { ...ticket, status: 'resolved', updatedAt: new Date().toISOString() };
-      }
-      return ticket;
+  const handleTicketAction = async (ticketId, action) => {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+    const res = await fetch('/api/admin/support', {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-user-id': userId, 
+        'x-user-role': userRole 
+      },
+      body: JSON.stringify({ ticketId, action })
     });
-    setTickets(updatedTickets);
-    localStorage.setItem('adminTickets', JSON.stringify(updatedTickets));
-    alert(`Ticket ${action}d successfully!`);
+    if (res.ok) {
+      alert(`Ticket ${action}d successfully!`);
+      window.location.reload();
+    }
   };
 
-  const handleDisputeAction = (disputeId, action) => {
-    const updatedDisputes = disputes.map(dispute => {
-      if (dispute.id === disputeId) {
-        if (action === 'investigate') return { ...dispute, status: 'investigating' };
-        if (action === 'mediate') return { ...dispute, status: 'investigating' };
-        if (action === 'resolve') return { ...dispute, status: 'resolved' };
-      }
-      return dispute;
-    });
-    setDisputes(updatedDisputes);
-    localStorage.setItem('adminDisputes', JSON.stringify(updatedDisputes));
-    alert(`Dispute ${action}d successfully!`);
+  const handleDisputeAction = async (disputeId, action) => {
+    alert('Dispute management coming soon');
   };
 
   return (
@@ -180,18 +110,18 @@ export default function AdminSupportPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Active Disputes</p>
-              <p className="text-2xl font-bold text-red-600">
-                {disputes.filter(d => ['pending', 'investigating'].includes(d.status)).length}
+              <p className="text-sm text-gray-600">In Progress</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {tickets.filter(t => t.status === 'in-progress').length}
               </p>
             </div>
-            <AlertTriangle className="w-8 h-8 text-red-600" />
+            <Clock className="w-8 h-8 text-yellow-600" />
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Resolved Today</p>
+              <p className="text-sm text-gray-600">Resolved</p>
               <p className="text-2xl font-bold text-green-600">
                 {tickets.filter(t => t.status === 'resolved').length}
               </p>
@@ -202,10 +132,10 @@ export default function AdminSupportPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Avg Response Time</p>
-              <p className="text-2xl font-bold text-purple-600">2.5h</p>
+              <p className="text-sm text-gray-600">Total Tickets</p>
+              <p className="text-2xl font-bold text-purple-600">{tickets.length}</p>
             </div>
-            <Clock className="w-8 h-8 text-purple-600" />
+            <MessageSquare className="w-8 h-8 text-purple-600" />
           </div>
         </div>
       </div>

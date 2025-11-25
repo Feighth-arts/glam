@@ -11,7 +11,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, description, price, duration, pointsValue } = await request.json();
+    const { name, description, category, price, duration, pointsValue } = await request.json();
+
+    let categoryId = null;
+    if (category) {
+      const cat = await prisma.serviceCategory.findFirst({ where: { name: category } });
+      if (!cat) {
+        const newCat = await prisma.serviceCategory.create({ data: { name: category } });
+        categoryId = newCat.id;
+      } else {
+        categoryId = cat.id;
+      }
+    }
 
     const service = await prisma.service.create({
       data: {
@@ -19,7 +30,8 @@ export async function POST(request) {
         description,
         basePrice: price,
         duration,
-        points: pointsValue
+        points: pointsValue,
+        categoryId
       }
     });
 
@@ -39,7 +51,18 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, name, description, price, duration, pointsValue } = await request.json();
+    const { id, name, description, category, price, duration, pointsValue } = await request.json();
+
+    let categoryId = null;
+    if (category) {
+      const cat = await prisma.serviceCategory.findFirst({ where: { name: category } });
+      if (!cat) {
+        const newCat = await prisma.serviceCategory.create({ data: { name: category } });
+        categoryId = newCat.id;
+      } else {
+        categoryId = cat.id;
+      }
+    }
 
     const service = await prisma.service.update({
       where: { id },
@@ -48,7 +71,8 @@ export async function PUT(request) {
         description,
         basePrice: price,
         duration,
-        points: pointsValue
+        points: pointsValue,
+        categoryId
       }
     });
 

@@ -127,39 +127,24 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Pending Approvals */}
+        {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Pending Approvals</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
           </div>
-          <div className="p-6 space-y-4">
-            <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Provider Applications</p>
-                <p className="text-sm text-gray-600">Awaiting verification</p>
-              </div>
-              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm font-medium">
-                0
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Disputes</p>
-                <p className="text-sm text-gray-600">Require resolution</p>
-              </div>
-              <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium">
-                0
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Payouts</p>
-                <p className="text-sm text-gray-600">Ready for processing</p>
-              </div>
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                0
-              </span>
-            </div>
+          <div className="p-6 space-y-3">
+            <a href="/admin/users" className="block p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+              <p className="font-medium text-gray-900">Manage Users</p>
+              <p className="text-sm text-gray-600">View and manage all users</p>
+            </a>
+            <a href="/admin/bookings" className="block p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+              <p className="font-medium text-gray-900">View Bookings</p>
+              <p className="text-sm text-gray-600">Monitor all bookings</p>
+            </a>
+            <a href="/admin/services" className="block p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+              <p className="font-medium text-gray-900">Manage Services</p>
+              <p className="text-sm text-gray-600">Add or edit services</p>
+            </a>
           </div>
         </div>
       </div>

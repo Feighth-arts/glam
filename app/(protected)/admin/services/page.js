@@ -69,24 +69,13 @@ export default function AdminServicesPage() {
         category: newService.category,
         price: Number(newService.basePrice),
         duration: Number(newService.duration),
-        pointsValue: Math.floor(Number(newService.basePrice) / 100),
-        providerId: userId
+        pointsValue: Math.floor(Number(newService.basePrice) / 100)
       })
     });
     
     if (response.ok) {
-      const created = await response.json();
-      setServices([...services, {
-        id: created.id,
-        name: created.name,
-        category: newService.category,
-        basePrice: created.price,
-        duration: created.duration,
-        description: created.description,
-        points: created.pointsValue
-      }]);
-      setNewService({ name: '', category: '', basePrice: '', duration: '', description: '' });
-      setIsAddingService(false);
+      alert('Service added successfully');
+      window.location.reload();
     }
   };
 
@@ -124,19 +113,8 @@ export default function AdminServicesPage() {
     });
     
     if (response.ok) {
-      setServices(services.map(service => 
-        service.id === editingService 
-          ? {
-              ...service,
-              ...newService,
-              basePrice: Number(newService.basePrice),
-              duration: Number(newService.duration),
-              points: Math.floor(Number(newService.basePrice) / 100)
-            }
-          : service
-      ));
-      setEditingService(null);
-      setNewService({ name: '', category: '', basePrice: '', duration: '', description: '' });
+      alert('Service updated successfully');
+      window.location.reload();
     }
   };
 
@@ -152,7 +130,8 @@ export default function AdminServicesPage() {
     });
     
     if (response.ok) {
-      setServices(services.filter(s => s.id !== serviceId));
+      alert('Service deleted successfully');
+      window.location.reload();
     }
   };
 
