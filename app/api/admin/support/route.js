@@ -59,6 +59,6 @@ export async function PATCH(request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Admin support PATCH error:', error);
-    return NextResponse.json({ error: 'Failed to update ticket' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

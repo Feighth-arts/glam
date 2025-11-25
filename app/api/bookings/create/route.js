@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getUserId } from '@/lib/auth-helper';
+import { getUserId, checkUserStatus } from '@/lib/auth-helper';
 
 const COMMISSION_RATE = 0.15;
 const MAX_POINTS_DISCOUNT = 0.30;
@@ -10,6 +10,11 @@ export async function POST(request) {
     const userId = getUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const statusCheck = await checkUserStatus(userId);
+    if (!statusCheck.valid) {
+      return NextResponse.json({ error: statusCheck.reason }, { status: 403 });
     }
 
     const { providerId, serviceId, bookingDatetime, location, notes, pointsToRedeem, phoneNumber } = await request.json();

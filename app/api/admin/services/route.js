@@ -15,19 +15,17 @@ export async function POST(request) {
 
     let categoryId = null;
     if (category) {
-      const cat = await prisma.serviceCategory.findFirst({ where: { name: category } });
+      let cat = await prisma.serviceCategory.findFirst({ where: { name: category } });
       if (!cat) {
-        const newCat = await prisma.serviceCategory.create({ data: { name: category } });
-        categoryId = newCat.id;
-      } else {
-        categoryId = cat.id;
+        cat = await prisma.serviceCategory.create({ data: { name: category } });
       }
+      categoryId = cat.id;
     }
 
     const service = await prisma.service.create({
       data: {
         name,
-        description,
+        description: description || '',
         basePrice: price,
         duration,
         points: pointsValue,
@@ -38,7 +36,7 @@ export async function POST(request) {
     return NextResponse.json(service);
   } catch (error) {
     console.error('Admin create service error:', error);
-    return NextResponse.json({ error: 'Failed to create service' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -55,20 +53,18 @@ export async function PUT(request) {
 
     let categoryId = null;
     if (category) {
-      const cat = await prisma.serviceCategory.findFirst({ where: { name: category } });
+      let cat = await prisma.serviceCategory.findFirst({ where: { name: category } });
       if (!cat) {
-        const newCat = await prisma.serviceCategory.create({ data: { name: category } });
-        categoryId = newCat.id;
-      } else {
-        categoryId = cat.id;
+        cat = await prisma.serviceCategory.create({ data: { name: category } });
       }
+      categoryId = cat.id;
     }
 
     const service = await prisma.service.update({
       where: { id },
       data: {
         name,
-        description,
+        description: description || '',
         basePrice: price,
         duration,
         points: pointsValue,
@@ -79,7 +75,7 @@ export async function PUT(request) {
     return NextResponse.json(service);
   } catch (error) {
     console.error('Admin update service error:', error);
-    return NextResponse.json({ error: 'Failed to update service' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -95,13 +91,14 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url);
     const id = parseInt(searchParams.get('id'));
 
-    await prisma.service.delete({
-      where: { id }
+    await prisma.service.update({
+      where: { id },
+      data: { status: 'INACTIVE' }
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Admin delete service error:', error);
-    return NextResponse.json({ error: 'Failed to delete service' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

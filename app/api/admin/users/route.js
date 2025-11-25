@@ -88,7 +88,7 @@ export async function GET(request) {
     return NextResponse.json(usersWithStats);
   } catch (error) {
     console.error('Admin users API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -111,6 +111,6 @@ export async function PATCH(request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Admin update user error:', error);
-    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

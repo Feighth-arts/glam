@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getUserId, getUserRole } from '@/lib/auth-helper';
+import { getUserId, getUserRole, checkUserStatus } from '@/lib/auth-helper';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -8,6 +8,13 @@ export async function GET(request) {
     const userRole = getUserRole(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (userRole !== 'ADMIN') {
+      const statusCheck = await checkUserStatus(userId);
+      if (!statusCheck.valid) {
+        return NextResponse.json({ error: statusCheck.reason }, { status: 403 });
+      }
     }
 
     let dashboardData = {};
